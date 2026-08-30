@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Копилка — Трекер расходов</title>
+<meta name="description" content="Умная копилка и трекер расходов с целями накоплений, мультивалютностью и сканером чеков">
+
+<!-- iOS PWA meta tags -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Копилка">
+<meta name="apple-touch-fullscreen" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#000000">
+<meta name="format-detection" content="telephone=no">
+<link rel="apple-touch-icon" href="data:image/png;base64,__ICON_BASE64__">
+<link rel="icon" type="image/png" href="data:image/png;base64,__ICON_BASE64__">
+<link id="manifestLink" rel="manifest">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+  html, body { background:#000; height:100%; overscroll-behavior-y: none; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    position: relative;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at 50% -10%, rgba(255,255,255,0.07), transparent 55%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  input, textarea, select, button { font-family: inherit; font-size: 16px; }
+  ::-webkit-scrollbar { display: none; }
+  .safe-top { padding-top: max(env(safe-area-inset-top), 18px); }
+  .safe-bottom { padding-bottom: max(env(safe-area-inset-bottom), 14px); }
+  .touch-none { touch-action: none; }
+  input::placeholder { color:#8E8E93; }
+
+  @keyframes cardEnter { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+  .card-enter { animation: cardEnter .4s ease both; }
+
+  @keyframes toastIn { from { opacity:0; transform: translateY(16px) scale(.92);} to {opacity:1; transform: translateY(0) scale(1);} }
+  @keyframes toastOut { to { opacity:0; transform: translateY(8px) scale(.92);} }
+  .toast-in { animation: toastIn .32s cubic-bezier(.34,1.56,.64,1) both; }
+  .toast-out { animation: toastOut .22s ease both; }
+
+  @keyframes tabIn { from { opacity:0; transform: translateY(7px);} to { opacity:1; transform: translateY(0);} }
+  .tab-anim { animation: tabIn .32s cubic-bezier(.22,1,.36,1) both; }
+
+  @keyframes goalPulse { 0%{transform:scale(1);} 35%{transform:scale(1.035); box-shadow:0 0 0 3px rgba(255,214,10,0.35);} 70%{transform:scale(0.99);} 100%{transform:scale(1); box-shadow:0 0 0 0 rgba(255,214,10,0);} }
+  .goal-celebrate { animation: goalPulse .7s ease; }
+
+  @keyframes popIn { from { opacity:0; transform: scale(.9);} to { opacity:1; transform: scale(1);} }
+  .pop-in { animation: popIn .25s ease both; }
+
+  @keyframes ringPop { 0%{transform:scale(1);} 40%{transform:scale(1.08);} 100%{transform:scale(1);} }
+  .ring-pop { animation: ringPop .5s ease; }
+
+  @keyframes shimmer { 0%{background-position:-200% 0;} 100%{background-position:200% 0;} }
+  .shimmer-text { background:linear-gradient(90deg,#fff 25%,#FFD60A 50%,#fff 75%); background-size:200% auto; -webkit-background-clip:text; background-clip:text; color:transparent; animation: shimmer 2.4s linear infinite; }
+
+  @keyframes floatSlow { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-6px);} }
+  .float-slow { animation: floatSlow 3.5s ease-in-out infinite; }
+
+  @keyframes fadeSlideUp { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
+  .fade-slide-up { animation: fadeSlideUp .35s cubic-bezier(.22,1,.36,1) both; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card-enter, .toast-in, .toast-out, .tab-anim, .goal-celebrate, .pop-in, .ring-pop { animation: none !important; }
+    * { transition-duration: 0.001ms !important; }
+  }
+</style>
+</head>
+<body class="bg-black text-white min-h-screen">
+
+  <!-- AUTH SCREEN -->
+  <div id="authScreen" class="fixed inset-0 z-[100] bg-black flex items-center justify-center px-6">
+    <form id="authForm" class="w-full max-w-sm" onsubmit="return handleAuthSubmit(event)">
+      <p class="text-5xl text-center mb-2">🐷</p>
+      <h1 class="text-2xl font-bold text-center mb-6">Копилка</h1>
+      <input id="authEmail" type="email" required placeholder="Email" autocomplete="email"
+        class="w-full bg-white/5 rounded-xl px-4 py-3.5 mb-3 outline-none focus:ring-2 focus:ring-[#0A84FF]/40">
+      <input id="authPassword" type="password" required minlength="6" placeholder="Пароль" autocomplete="current-password"
+        class="w-full bg-white/5 rounded-xl px-4 py-3.5 mb-4 outline-none focus:ring-2 focus:ring-[#0A84FF]/40">
+      <p id="authError" class="hidden text-sm text-[#FF453A] mb-3"></p>
+      <button id="authSubmitBtn" type="submit" class="w-full bg-[#0A84FF] active:scale-[0.98] transition-all rounded-2xl py-4 font-semibold text-[17px]">Войти</button>
+      <button type="button" onclick="toggleAuthMode()" class="w-full text-center text-sm text-[#8E8E93] mt-4">Нет аккаунта? Зарегистрироваться</button>
+    </form>
+  </div>
+
+  <div id="app" class="max-w-md mx-auto min-h-screen flex-col relative z-10 hidden">
+    <header class="safe-top px-5 pt-3 pb-1 flex items-start justify-between gap-3">
+      <div>
+        <h1 class="text-[28px] font-bold tracking-tight">🐷 Копилка</h1>
+        <p class="text-sm text-[#8E8E93] -mt-0.5">Умный трекер расходов</p>
+      </div>
+      <div class="flex gap-2 shrink-0">
+        <button id="settingsBtn" onclick="openSettingsSheet()" class="w-9 h-9 mt-1 rounded-full bg-white/5 flex items-center justify-center active:scale-90 transition-transform">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+        <button id="changelogBtn" onclick="openChangelog()" class="relative w-9 h-9 mt-1 rounded-full bg-white/5 flex items-center justify-center active:scale-90 transition-transform">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+          <span id="changelogDot" class="hidden absolute top-1 right-1 w-2 h-2 rounded-full bg-[#FF453A]"></span>
+        </button>
+      </div>
+    </header>
+
+    <main id="mainScroll" class="flex-1 px-5 pt-3 pb-32">
+
+      <!-- HOME TAB -->
+      <section id="tabHome">
+        <div id="pullIndicator" class="flex justify-center py-0 opacity-0 transition-opacity" style="margin-bottom:-4px;">
+          <svg id="pullSpinner" width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#8E8E93" stroke-width="2.2" stroke-opacity="0.25"/><path d="M21 12a9 9 0 0 0-9-9" stroke="#8E8E93" stroke-width="2.2" stroke-linecap="round"/></svg>
+        </div>
+
+        <div class="rounded-3xl p-5 mb-4 relative overflow-hidden" style="background:linear-gradient(135deg,#1c1c1e,#232325)">
+          <div class="absolute -right-10 -top-14 w-44 h-44 rounded-full opacity-25 blur-2xl pointer-events-none" style="background:radial-gradient(circle,#FFD60A,transparent 70%)"></div>
+        <div class="relative float-slow">
+            <p class="text-[#8E8E93] text-sm font-medium mb-1">Текущий баланс</p>
+            <p id="balanceAmount" class="text-[36px] font-bold tracking-tight mb-4 shimmer-text">0 ₽</p>
+            <div class="flex gap-3">
+              <div class="flex-1 bg-white/5 rounded-2xl px-3.5 py-3">
+                <p class="text-[11px] text-[#8E8E93] mb-0.5 flex items-center gap-1"><span class="text-[#30D158]">▲</span> Доходы</p>
+                <p id="incomeAmount" class="font-semibold">0 ₽</p>
+              </div>
+              <div class="flex-1 bg-white/5 rounded-2xl px-3.5 py-3">
+                <p class="text-[11px] text-[#8E8E93] mb-0.5 flex items-center gap-1"><span class="text-[#FF453A]">▼</span> Расходы</p>
+                <p id="expenseAmount" class="font-semibold">0 ₽</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide mb-2">Валюта отображения</p>
+        <div id="currencySelector" class="grid grid-cols-4 gap-2 mb-4"></div>
+
+        <div class="bg-[#1c1c1e] rounded-2xl px-4 py-3 mb-5">
+          <div class="flex items-center justify-between gap-2">
+            <div id="ratesTicker" class="flex gap-3 overflow-x-auto text-xs text-[#8E8E93] flex-1"></div>
+            <button id="ratesRefreshBtn" onclick="fetchRates(true)" class="shrink-0 text-[#0A84FF] active:scale-90 transition-transform p-1">
+              <svg id="refreshIcon" width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.2" stroke-opacity="0.25"/><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+          <p id="ratesUpdatedLabel" class="text-[10px] text-[#8E8E93] mt-1.5"></p>
+        </div>
+
+        <h2 class="text-lg font-bold mb-3">Последние операции</h2>
+        <p class="text-[11px] text-[#8E8E93] -mt-2 mb-3">Свайп влево — удалить</p>
+        <div id="transactionsList" class="flex flex-col gap-2.5"></div>
+        <div id="transactionsEmpty" class="text-center py-14 text-[#8E8E93]">
+          <p class="text-4xl mb-2">🧾</p>
+          <p class="font-medium text-white/80">Пока нет операций</p>
+          <p class="text-sm mt-1">Нажмите «+», чтобы добавить первую</p>
+        </div>
+      </section>
+
+      <!-- GOALS TAB -->
+      <section id="tabGoals" class="hidden">
+        <div id="goalsSummaryCard" class="hidden flex items-center gap-4 bg-[#1c1c1e] rounded-2xl p-4 mb-5">
+          <svg id="goalsRing" width="64" height="64" viewBox="0 0 64 64" class="shrink-0 -rotate-90">
+            <circle cx="32" cy="32" r="27" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="7"/>
+            <circle id="goalsRingProgress" cx="32" cy="32" r="27" fill="none" stroke="#FFD60A" stroke-width="7" stroke-linecap="round" stroke-dasharray="169.6" stroke-dashoffset="169.6" style="transition: stroke-dashoffset .7s ease"/>
+          </svg>
+          <div class="min-w-0">
+            <p id="goalsRingLabel" class="text-2xl font-bold">0%</p>
+            <p class="text-xs text-[#8E8E93]">Общий прогресс по целям</p>
+            <p id="goalsRingSub" class="text-xs text-[#8E8E93] mt-0.5"></p>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-bold">Ваши цели</h2>
+          <button onclick="openGoalSheet()" class="text-sm font-semibold text-[#FFD60A] bg-[#FFD60A]/10 px-3.5 py-1.5 rounded-full active:scale-95 transition-transform">+ Добавить</button>
+        </div>
+        <div id="goalsList" class="flex flex-col gap-3"></div>
+        <div id="goalsEmpty" class="text-center py-14 text-[#8E8E93]">
+          <p class="text-4xl mb-2">🎯</p>
+          <p class="font-medium text-white/80">Пока нет целей</p>
+          <p class="text-sm mt-1">Создайте первую цель для накоплений</p>
+        </div>
+      </section>
+
+      <!-- ANALYTICS TAB -->
+      <section id="tabAnalytics" class="hidden">
+        <h2 class="text-lg font-bold mb-3">Доходы и расходы</h2>
+        <div class="bg-[#1c1c1e] rounded-2xl p-4 mb-6">
+          <div class="flex justify-between text-sm mb-2 gap-2">
+            <span id="ivsIncomeLabel" class="text-[#30D158] font-medium truncate">Доходы 0 ₽</span>
+            <span id="ivsExpenseLabel" class="text-[#FF453A] font-medium truncate">Расходы 0 ₽</span>
+          </div>
+          <div class="h-3 rounded-full overflow-hidden flex bg-white/10">
+            <div id="ivsBarIncome" class="h-full bg-[#30D158] transition-all duration-700" style="width:0%"></div>
+            <div id="ivsBarExpense" class="h-full bg-[#FF453A] transition-all duration-700" style="width:0%"></div>
+          </div>
+        </div>
+
+        <h2 class="text-lg font-bold mb-3">Расходы по категориям</h2>
+        <div id="categoryBars"></div>
+        <div id="analyticsEmpty" class="text-center py-14 text-[#8E8E93]">
+          <p class="text-4xl mb-2">📊</p>
+          <p class="font-medium text-white/80">Пока нет расходов</p>
+          <p class="text-sm mt-1">Аналитика появится после первой операции</p>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- FAB -->
+    <button id="fabButton" class="fixed right-5 bottom-24 w-14 h-14 rounded-full bg-[#0A84FF] shadow-lg shadow-blue-500/30 flex items-center justify-center text-3xl font-light active:scale-90 transition-transform z-30">＋</button>
+
+    <!-- BOTTOM NAV -->
+    <nav class="fixed bottom-0 inset-x-0 z-20">
+      <div class="max-w-md mx-auto bg-[#1c1c1e]/85 backdrop-blur-xl border-t border-white/10 flex safe-bottom">
+        <button class="nav-btn flex-1 flex flex-col items-center py-2.5 gap-1 text-[#0A84FF] active:opacity-60 transition-opacity" data-tab="home" onclick="switchTab('home')">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1H9a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1h2.5a1 1 0 0 0 1-1v-9"/></svg>
+          <span class="text-[10px] font-medium">Главная</span>
+        </button>
+        <button class="nav-btn flex-1 flex flex-col items-center py-2.5 gap-1 text-[#8E8E93] active:opacity-60 transition-opacity" data-tab="goals" onclick="switchTab('goals')">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.3"/><circle cx="12" cy="12" r="4.8"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>
+          <span class="text-[10px] font-medium">Цели</span>
+        </button>
+        <button class="nav-btn flex-1 flex flex-col items-center py-2.5 gap-1 text-[#8E8E93] active:opacity-60 transition-opacity" data-tab="analytics" onclick="switchTab('analytics')">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>
+          <span class="text-[10px] font-medium">Аналитика</span>
+        </button>
+      </div>
+    </nav>
+  </div>
+
+  <!-- BACKDROP -->
+  <div id="backdrop" class="fixed inset-0 bg-black/60 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300 z-40"></div>
+
+  <!-- ADD TRANSACTION SHEET -->
+  <div id="addSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 ease-out">
+    <div class="max-w-md mx-auto bg-[#1c1c1e] rounded-t-3xl safe-bottom max-h-[88vh] overflow-y-auto">
+      <div id="addHandle" class="pt-3 pb-1 flex justify-center touch-none"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
+      <div class="px-5 pb-6 pt-2">
+        <div class="flex items-center justify-between mb-5">
+          <h2 class="text-xl font-bold">Новая операция</h2>
+          <button onclick="closeSheet('addSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#8E8E93] active:scale-90 transition-transform">✕</button>
+        </div>
+
+        <button type="button" onclick="openCameraSheet()" class="w-full flex items-center justify-center gap-2 bg-white/5 active:bg-white/10 active:scale-[0.98] transition-all rounded-2xl py-3.5 font-medium text-sm text-[#0A84FF] mb-1.5">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1-2h7l1 2h2A1.5 1.5 0 0 1 20 8.5v10A1.5 1.5 0 0 1 18.5 20h-13A1.5 1.5 0 0 1 4 18.5v-10Z"/><circle cx="12" cy="13" r="3.4"/></svg>
+          Сканировать чек
+        </button>
+        <p class="text-[11px] text-[#8E8E93] text-center mb-1">Камера или галерея, распознаётся прямо на телефоне. Бета — проверяйте сумму.</p>
+        <input id="receiptInput" type="file" accept="image/*" capture="environment" class="hidden">
+        <div id="receiptStatus" class="hidden flex-col items-center gap-2 text-xs text-[#8E8E93] mb-2 mt-2">
+          <div class="flex items-center gap-2">
+            <svg class="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.2" stroke-opacity="0.25"/><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+            <span id="receiptStatusText">ИИ смотрит на чек…</span>
+          </div>
+        </div>
+        <div id="receiptConfirm" class="hidden bg-white/5 border border-[#0A84FF]/30 rounded-2xl p-4 mb-3">
+          <p class="text-xs text-[#8E8E93] mb-2">ИИ распознал:</p>
+          <p id="receiptConfirmText" class="text-sm mb-3 leading-relaxed"></p>
+          <div class="flex gap-2">
+            <button type="button" onclick="confirmReceipt(true)" class="flex-1 bg-[#30D158] text-black rounded-xl py-2.5 font-semibold text-sm active:scale-95 transition-transform">Да, верно</button>
+            <button type="button" onclick="confirmReceipt(false)" class="flex-1 bg-white/10 rounded-xl py-2.5 font-semibold text-sm active:scale-95 transition-transform">Введу сам</button>
+          </div>
+        </div>
+
+        <div class="relative flex bg-white/5 rounded-full p-1 mt-4 mb-6">
+          <div id="segSlider" class="absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full transition-transform duration-300 ease-out" style="background:#FF453A"></div>
+          <button type="button" id="segExpenseBtn" onclick="setType('expense')" class="relative z-10 flex-1 py-2.5 rounded-full font-semibold text-sm transition-colors text-white">Расход</button>
+          <button type="button" id="segIncomeBtn" onclick="setType('income')" class="relative z-10 flex-1 py-2.5 rounded-full font-semibold text-sm transition-colors text-[#8E8E93]">Доход</button>
+        </div>
+
+        <div class="flex items-center justify-center gap-2 mb-3">
+          <input id="amountInput" type="text" inputmode="decimal" placeholder="0" class="bg-transparent text-5xl font-bold text-center outline-none placeholder-[#3A3A3C] w-48">
+          <span id="amountCurrencySymbol" class="text-3xl font-semibold text-[#8E8E93]">₽</span>
+        </div>
+        <div id="entryCurrencyChips" class="flex gap-2 justify-center flex-wrap mb-6"></div>
+
+        <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide mb-2">Категория</p>
+        <div id="categoryGrid" class="grid grid-cols-4 gap-2 mb-5"></div>
+
+        <input id="commentInput" type="text" maxlength="60" placeholder="Комментарий (необязательно)" class="w-full bg-white/5 rounded-xl px-4 py-3.5 text-[15px] outline-none mb-5 focus:ring-2 focus:ring-[#0A84FF]/40">
+
+        <button id="addSaveBtn" onclick="saveTransaction()" disabled class="w-full bg-[#0A84FF] disabled:opacity-40 disabled:pointer-events-none active:scale-[0.98] transition-all rounded-2xl py-4 font-semibold text-[17px]">Добавить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD GOAL SHEET -->
+  <div id="goalSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 ease-out">
+    <div class="max-w-md mx-auto bg-[#1c1c1e] rounded-t-3xl safe-bottom">
+      <div id="goalHandle" class="pt-3 pb-1 flex justify-center touch-none"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
+      <div class="px-5 pb-6 pt-2">
+        <div class="flex items-center justify-between mb-5">
+          <h2 class="text-xl font-bold">Новая цель</h2>
+          <button onclick="closeSheet('goalSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#8E8E93] active:scale-90 transition-transform">✕</button>
+        </div>
+        <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide mb-2">Название</p>
+        <input id="goalNameInput" type="text" maxlength="40" placeholder="Например, Отпуск в Сочи" class="w-full bg-white/5 rounded-xl px-4 py-3.5 text-[15px] outline-none mb-5 focus:ring-2 focus:ring-[#FFD60A]/40">
+        <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide mb-2">Целевая сумма</p>
+        <div class="flex items-center gap-2 bg-white/5 rounded-xl px-4 py-3.5 mb-6 focus-within:ring-2 focus-within:ring-[#FFD60A]/40">
+          <input id="goalTargetInput" type="text" inputmode="decimal" placeholder="0" class="flex-1 bg-transparent text-[15px] outline-none">
+          <span id="goalCurrencySymbol" class="text-[#8E8E93] text-sm">₽</span>
+        </div>
+        <button onclick="saveGoal()" class="w-full bg-[#FFD60A] text-black active:scale-[0.98] transition-all rounded-2xl py-4 font-semibold text-[17px]">Создать цель</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOP UP SHEET -->
+  <div id="topUpSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 ease-out">
+    <div class="max-w-md mx-auto bg-[#1c1c1e] rounded-t-3xl safe-bottom">
+      <div id="topUpHandle" class="pt-3 pb-1 flex justify-center touch-none"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
+      <div class="px-5 pb-6 pt-2">
+        <div class="flex items-center justify-between mb-1">
+          <h2 class="text-xl font-bold">Пополнить цель</h2>
+          <button onclick="closeSheet('topUpSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#8E8E93] active:scale-90 transition-transform">✕</button>
+        </div>
+        <p id="topUpGoalName" class="text-[#FFD60A] font-semibold mb-1"></p>
+        <p id="topUpBalanceLabel" class="text-xs text-[#8E8E93] mb-5"></p>
+        <div class="flex items-center justify-center gap-2 mb-6">
+          <input id="topUpAmountInput" type="text" inputmode="decimal" placeholder="0" class="bg-transparent text-5xl font-bold text-center outline-none placeholder-[#3A3A3C] w-48">
+          <span id="topUpCurrencySymbol" class="text-3xl font-semibold text-[#8E8E93]">₽</span>
+        </div>
+        <button onclick="saveTopUp()" class="w-full bg-[#FFD60A] text-black active:scale-[0.98] transition-all rounded-2xl py-4 font-semibold text-[17px]">Пополнить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHANGELOG SHEET -->
+  <div id="changelogSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 ease-out">
+    <div class="max-w-md mx-auto bg-[#1c1c1e] rounded-t-3xl safe-bottom max-h-[80vh] overflow-y-auto">
+      <div id="changelogHandle" class="pt-3 pb-1 flex justify-center touch-none"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
+      <div class="px-5 pb-6 pt-2">
+        <div class="flex items-center justify-between mb-5">
+          <h2 class="text-xl font-bold">Что нового</h2>
+          <button onclick="closeSheet('changelogSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#8E8E93] active:scale-90 transition-transform">✕</button>
+        </div>
+        <div id="changelogList"></div>
+        <button onclick="closeSheet('changelogSheet')" class="w-full bg-white/10 active:scale-[0.98] transition-all rounded-2xl py-3.5 font-semibold text-[15px] mt-2">Понятно</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FULLSCREEN CAMERA -->
+  <div id="cameraSheet" class="fixed inset-0 z-50 bg-black hidden flex-col">
+    <div class="flex items-center justify-between px-4 safe-top pb-3">
+      <button onclick="closeCameraSheetUI()" class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white active:scale-90 transition-transform">✕</button>
+      <p class="text-white text-sm font-medium">Наведите на чек</p>
+      <div class="w-9"></div>
+    </div>
+    <div class="flex-1 relative overflow-hidden bg-[#0a0a0a]">
+      <video id="cameraVideo" autoplay playsinline muted class="absolute inset-0 w-full h-full object-cover"></video>
+      <div class="absolute inset-6 border-2 border-white/40 rounded-2xl pointer-events-none"></div>
+      <p id="cameraHint" class="hidden absolute inset-x-6 top-1/2 -translate-y-1/2 text-center text-white/70 text-sm"></p>
+    </div>
+    <div class="safe-bottom pt-5 flex items-center justify-center gap-10 bg-black">
+      <button onclick="triggerGalleryFallback()" class="text-white/70 text-xs font-medium w-14 text-center leading-tight">Из<br>галереи</button>
+      <button onclick="capturePhoto()" class="w-16 h-16 rounded-full bg-white active:scale-90 transition-transform border-4 border-white/30"></button>
+      <div class="w-14"></div>
+    </div>
+    <canvas id="cameraCanvas" class="hidden"></canvas>
+  </div>
+
+  <!-- SETTINGS SHEET -->
+  <div id="settingsSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 ease-out">
+    <div class="max-w-md mx-auto bg-[#1c1c1e] rounded-t-3xl safe-bottom">
+      <div id="settingsHandle" class="pt-3 pb-1 flex justify-center touch-none"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
+      <div class="px-5 pb-6 pt-2">
+        <div class="flex items-center justify-between mb-5">
+          <h2 class="text-xl font-bold">Настройки</h2>
+          <button onclick="closeSheet('settingsSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#8E8E93] active:scale-90 transition-transform">✕</button>
+        </div>
+        <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide mb-2">Зарплата в месяц</p>
+        <div class="flex items-center gap-2 bg-white/5 rounded-xl px-4 py-3.5 mb-2 focus-within:ring-2 focus-within:ring-[#0A84FF]/40">
+          <input id="salaryInput" type="text" inputmode="decimal" placeholder="0" class="flex-1 bg-transparent text-[15px] outline-none">
+          <span id="salaryCurrencySymbol" class="text-[#8E8E93] text-sm">₽</span>
+        </div>
+        <p class="text-[11px] text-[#8E8E93] mb-5">Используется для будущей аналитики бюджета</p>
+        <button onclick="saveSalary()" class="w-full bg-[#0A84FF] active:scale-[0.98] transition-all rounded-2xl py-4 font-semibold text-[17px] mb-3">Сохранить</button>
+        <button onclick="handleLogout()" class="w-full bg-white/5 text-[#FF453A] active:scale-[0.98] transition-all rounded-2xl py-3.5 font-semibold text-[15px]">Выйти из аккаунта</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PREMIUM SHEET -->
+  <div id="premiumSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 ease-out">
+    <div class="max-w-md mx-auto bg-gradient-to-b from-[#2a2410] to-[#1c1c1e] rounded-t-3xl safe-bottom">
+      <div id="premiumHandle" class="pt-3 pb-1 flex justify-center touch-none"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
+      <div class="px-5 pb-6 pt-2 text-center">
+        <p class="text-5xl mb-2">👑</p>
+        <h2 class="text-xl font-bold mb-1">Копилка Premium</h2>
+        <p class="text-sm text-[#8E8E93] mb-5">Бесплатно доступно до 3 целей. С премиумом — без ограничений и с бонусами</p>
+        <div class="text-left bg-white/5 rounded-2xl p-4 mb-5 space-y-2.5">
+          <p class="text-sm flex items-center gap-2"><span class="text-[#FFD60A]">✓</span> Неограниченное число целей</p>
+          <p class="text-sm flex items-center gap-2"><span class="text-[#FFD60A]">✓</span> Безлимитное сканирование чеков ИИ</p>
+          <p class="text-sm flex items-center gap-2"><span class="text-[#FFD60A]">✓</span> Расширенная аналитика по месяцам</p>
+          <p class="text-sm flex items-center gap-2"><span class="text-[#FFD60A]">✓</span> Экспорт операций</p>
+        </div>
+        <button onclick="requestPremium()" class="w-full bg-[#FFD60A] text-black active:scale-[0.98] transition-all rounded-2xl py-4 font-semibold text-[17px] mb-3">Оформить Premium</button>
+        <button onclick="closeSheet('premiumSheet')" class="w-full text-[#8E8E93] text-sm py-2">Не сейчас</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toastContainer" class="fixed left-0 right-0 bottom-24 flex flex-col items-center gap-2 z-[60] pointer-events-none px-5"></div>
+
+<script>
+  // ---------- Currency config ----------
+  const CURRENCIES = {
+    RUB: { symbol: '₽', name: 'Российский рубль' },
+    USD: { symbol: '$', name: 'Доллар США' },
+    EUR: { symbol: '€', name: 'Евро' },
+    BYN: { symbol: 'Br', name: 'Белорусский рубль' },
+  };
+  const FALLBACK_RATES = { USD: 1, EUR: 0.92, RUB: 83, BYN: 3.1 };
+
+  // ---------- Category config ----------
+  const EXPENSE_CATEGORIES = [
+    { name: 'Еда', icon: '🍔', color: '#FF9F0A' },
+    { name: 'Транспорт', icon: '🚗', color: '#0A84FF' },
+    { name: 'Жильё', icon: '🏠', color: '#BF5AF2' },
+    { name: 'Развлечения', icon: '🎮', color: '#FF375F' },
+    { name: 'Здоровье', icon: '💊', color: '#64D2FF' },
+    { name: 'Покупки', icon: '🛍️', color: '#5E5CE6' },
+    { name: 'Связь', icon: '📱', color: '#30D158' },
+    { name: 'Другое', icon: '📦', color: '#8E8E93' },
+  ];
+  const INCOME_CATEGORIES = [
+    { name: 'Зарплата', icon: '💼', color: '#30D158' },
+    { name: 'Подарок', icon: '🎁', color: '#FF375F' },
+    { name: 'Фриланс', icon: '💻', color: '#5E5CE6' },
+    { name: 'Инвестиции', icon: '📈', color: '#64D2FF' },
+    { name: 'Другое', icon: '💰', color: '#FFD60A' },
+  ];
+  const SAVING_CATEGORY = { name: 'Накопления', icon: '🐷', color: '#FFD60A' };
+  const ACHIEVEMENT_THRESHOLDS = [1000, 5000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000];
+
+  // ---------- Changelog ----------
+  const CHANGELOG = [
+    { version: '3.0', date: '30.08.2026', items: [
+      'Сканер чеков теперь может сразу включать камеру (не только выбор фото из галереи)',
+      'Автоопределение валюты чека по магазину: Green → BYN, Магнит → RUB. Если магазин не распознан, текущая выбранная валюта (например, BYN) больше не сбрасывается на RUB',
+      'Курсы валют показывают динамику ▲/▼ по сравнению с прошлым обновлением',
+      'Потяните вниз на главном экране, чтобы обновить курсы (pull-to-refresh)',
+      'Свайп влево по операции — быстрое удаление',
+      'Общий прогресс по всем целям в виде кольца на вкладке «Цели»',
+      'Достижения за суммарные накопления в копилке',
+    ]},
+    { version: '2.0', date: '30.08.2026', items: [
+      'Мультивалютность: RUB, USD, EUR, BYN с живыми курсами',
+      'Все суммы (баланс, операции, цели, аналитика) пересчитываются в выбранную валюту',
+      'Сканирование чеков камерой для быстрого добавления расхода — бета',
+      'Новые анимации: счётчик баланса, переходы между вкладками, поздравление при цели',
+      'Раздел «Что нового» с историей изменений',
+    ]},
+    { version: '1.0', date: '30.08.2026', items: [
+      'Учёт доходов и расходов с категориями и комментариями',
+      'Финансовые цели с прогресс-баром и пополнением с баланса',
+      'Аналитика расходов по категориям',
+      'Хранение всех данных на устройстве (localStorage)',
+    ]},
+  ];
+
+  // ---------- Supabase ----------
+  const SUPABASE_URL = 'https://xscuojyubgnilmufesvx.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzY3Vvanl1YmduaWxtdWZlc3Z4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgxMTExMTMsImV4cCI6MjEwMzY4NzExM30.th6U5ns_8BLmmngXcyk7azZDsSW9Nq4bTy6RDTVEU4k';
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  let currentUser = null;
+  let isAuthSignup = false;
+
+  function toggleAuthMode() {
+    isAuthSignup = !isAuthSignup;
+    document.getElementById('authSubmitBtn').textContent = isAuthSignup ? 'Зарегистрироваться' : 'Войти';
+    document.querySelector('#authForm button[type="button"]').textContent = isAuthSignup ? 'Уже есть аккаунт? Войти' : 'Нет аккаунта? Зарегистрироваться';
+  }
+  async function handleAuthSubmit(e) {
+    e.preventDefault();
+    const email = document.getElementById('authEmail').value.trim();
+    const password = document.getElementById('authPassword').value;
+    const errEl = document.getElementById('authError');
+    errEl.classList.add('hidden');
+    const btn = document.getElementById('authSubmitBtn');
+    btn.disabled = true;
+    const { error } = isAuthSignup
+      ? await sb.auth.signUp({ email, password })
+      : await sb.auth.signInWithPassword({ email, password });
+    btn.disabled = false;
+    if (error) { errEl.textContent = error.message; errEl.classList.remove('hidden'); return false; }
+    if (isAuthSignup) { errEl.classList.remove('hidden'); errEl.classList.remove('text-[#FF453A]'); errEl.classList.add('text-[#30D158]'); errEl.textContent = 'Проверьте почту и подтвердите регистрацию, затем войдите'; toggleAuthMode(); }
+    return false;
+  }
+  async function handleLogout() {
+    await sb.auth.signOut();
+    location.reload();
+  }
+
+  async function loadUserData(userId) {
+    const [txRes, goalsRes, profileRes] = await Promise.all([
+      sb.from('transactions').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+      sb.from('goals').select('*').eq('user_id', userId).order('created_at', { ascending: true }),
+      sb.from('profiles').select('*').eq('id', userId).single(),
+    ]);
+    transactions = (txRes.data || []).map(t => ({ id: t.id, type: t.type, category: t.category, amount: Number(t.amount), entryAmount: Number(t.entry_amount), entryCurrency: t.entry_currency, comment: t.comment, isSaving: t.is_saving, date: new Date(t.created_at).getTime() }));
+    goals = (goalsRes.data || []).map(g => ({ id: g.id, name: g.name, target: Number(g.target), collected: Number(g.collected), date: new Date(g.created_at).getTime() }));
+    userSalary = profileRes.data ? Number(profileRes.data.salary) || 0 : 0;
+    userSalaryCurrency = profileRes.data ? profileRes.data.salary_currency || 'RUB' : 'RUB';
+    userIsPremium = profileRes.data ? !!profileRes.data.is_premium : false;
+    if (profileRes.data && profileRes.data.display_currency) { displayCurrency = profileRes.data.display_currency; }
+    updatePremiumBadge();
+  }
+
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (session && session.user) {
+      currentUser = session.user;
+      document.getElementById('authScreen').classList.add('hidden');
+      const app = document.getElementById('app');
+      app.classList.remove('hidden'); app.classList.add('flex');
+      await loadUserData(currentUser.id);
+      renderCurrencySelector();
+      setType('expense');
+      switchTab('home');
+      updateRatesUI();
+      renderAll();
+    } else {
+      currentUser = null;
+      document.getElementById('authScreen').classList.remove('hidden');
+      const app = document.getElementById('app');
+      app.classList.add('hidden'); app.classList.remove('flex');
+    }
+  });
+
+  // ---------- Settings (salary) ----------
+  let userSalary = 0;
+  let userSalaryCurrency = 'RUB';
+  let userIsPremium = false;
+  function updatePremiumBadge() {
+    const btn = document.getElementById('settingsBtn');
+    if (!btn) return;
+    btn.classList.toggle('ring-2', userIsPremium);
+    btn.classList.toggle('ring-[#FFD60A]/60', userIsPremium);
+  }
+  function openPremiumSheet() { openSheet('premiumSheet'); }
+  async function requestPremium() {
+    showToast('Оплата подключается отдельно — пока это заглушка для теста 🙂');
+  }
+  function openSettingsSheet() {
+    document.getElementById('salaryCurrencySymbol').textContent = CURRENCIES[displayCurrency].symbol;
+    document.getElementById('salaryInput').value = userSalary ? String(convert(userSalary, 'RUB', displayCurrency).toFixed(2)).replace('.00','') : '';
+    openSheet('settingsSheet');
+  }
+  async function saveSalary() {
+    const entered = parseFloat(document.getElementById('salaryInput').value) || 0;
+    userSalary = convert(entered, displayCurrency, 'RUB');
+    userSalaryCurrency = displayCurrency;
+    await sb.from('profiles').update({ salary: userSalary, salary_currency: userSalaryCurrency }).eq('id', currentUser.id);
+    closeSheet('settingsSheet');
+    showToast('Зарплата сохранена');
+  }
+
+  // ---------- State ----------
+  let transactions = [];
+  let goals = [];
+
+  let currentTab = 'home';
+  let currentSheetId = null;
+  let selectedType = 'expense';
+  let selectedCategory = null;
+  let selectedEntryCurrency = 'RUB';
+  let topUpGoalId = null;
+  let justCompletedGoalId = null;
+  let lastBalanceDisplay = 0;
+  let cameraStream = null;
+
+  let displayCurrency = localStorage.getItem('piggy_currency') || 'RUB';
+  let rates = FALLBACK_RATES;
+  let ratesUpdatedAt = null;
+  let rateTrend = {};
+
+  const TAB_IDS = { home: 'tabHome', goals: 'tabGoals', analytics: 'tabAnalytics' };
+
+  // ---------- Persistence ----------
+  function persist() { /* запись идёт напрямую в Supabase в местах мутаций ниже */ }
+
+  // ---------- Helpers ----------
+  function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+  function escapeHtml(str) { const d = document.createElement('div'); d.textContent = str ?? ''; return d.innerHTML; }
+  function prefersReducedMotion() { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+
+  function convert(amount, from, to) {
+    if (from === to) return amount;
+    const r = rates || FALLBACK_RATES;
+    const usd = amount / (r[from] || 1);
+    return usd * (r[to] || 1);
+  }
+  function fmRaw(n, cur) {
+    const c = CURRENCIES[cur] || CURRENCIES.RUB;
+    const rounded = Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+    return rounded.toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' ' + c.symbol;
+  }
+  function fmDisplay(amountRUB) { return fmRaw(convert(amountRUB, 'RUB', displayCurrency), displayCurrency); }
+
+  function calcBalance() { return transactions.reduce((s, t) => s + (t.type === 'income' ? t.amount : -t.amount), 0); }
+  function calcIncome() { return transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0); }
+  function calcExpense() { return transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0); }
+  function getCategoryInfo(t) {
+    if (t.isSaving) return SAVING_CATEGORY;
+    const list = t.type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+    return list.find(c => c.name === t.category) || { name: t.category, icon: '❓', color: '#8E8E93' };
+  }
+  function formatDate(ts) {
+    const d = new Date(ts), today = new Date();
+    const yest = new Date(today); yest.setDate(today.getDate() - 1);
+    const time = d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    if (d.toDateString() === today.toDateString()) return 'Сегодня, ' + time;
+    if (d.toDateString() === yest.toDateString()) return 'Вчера, ' + time;
+    return d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }) + ', ' + time;
+  }
+  function timeAgo(ts) {
+    if (!ts) return '';
+    const diff = Math.max(0, Date.now() - ts);
+    const min = Math.round(diff / 60000);
+    if (min < 1) return 'только что';
+    if (min < 60) return min + ' мин назад';
+    const h = Math.round(min / 60);
+    if (h < 24) return h + ' ч назад';
+    return Math.round(h / 24) + ' дн назад';
+  }
+  function sanitizeAmountInput(e) {
+    let v = e.target.value.replace(/[^0-9.,]/g, '').replace(',', '.');
+    const parts = v.split('.');
+    if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
+    e.target.value = v;
+  }
+  function animateValue(el, from, to, duration, formatFn) {
+    if (prefersReducedMotion() || !el) { if (el) el.textContent = formatFn(to); return; }
+    const start = performance.now();
+    function step(now) {
+      const p = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = formatFn(from + (to - from) * eased);
+      if (p < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  // ---------- Exchange rates ----------
+  function rateValueRub(ratesObj, cur) {
+    const usd = 1 / (ratesObj[cur] || 1);
+    return usd * (ratesObj['RUB'] || 1);
+  }
+  async function fetchRates(force) {
+    const btn = document.getElementById('refreshIcon');
+    let cache = null;
+    try { cache = JSON.parse(localStorage.getItem('piggy_rates')); } catch (e) {}
+    const ONE_HOUR = 60 * 60 * 1000;
+    if (!force && cache && (Date.now() - cache.time < ONE_HOUR)) {
+      rates = cache.rates; ratesUpdatedAt = cache.time;
+      updateRatesUI(); renderAll();
+      return;
+    }
+    if (btn) btn.classList.add('animate-spin');
+    const oldRates = rates;
+    try {
+      const res = await fetch('https://open.er-api.com/v6/latest/USD');
+      const data = await res.json();
+      if (data && data.result === 'success' && data.rates) {
+        const newRates = {
+          USD: 1,
+          EUR: data.rates.EUR || FALLBACK_RATES.EUR,
+          RUB: data.rates.RUB || FALLBACK_RATES.RUB,
+          BYN: data.rates.BYN || FALLBACK_RATES.BYN,
+        };
+        ['USD', 'EUR', 'BYN'].forEach(cur => {
+          const oldV = rateValueRub(oldRates, cur), newV = rateValueRub(newRates, cur);
+          rateTrend[cur] = newV > oldV + 0.001 ? 'up' : newV < oldV - 0.001 ? 'down' : rateTrend[cur] || 'flat';
+        });
+        rates = newRates;
+        ratesUpdatedAt = Date.now();
+        localStorage.setItem('piggy_rates', JSON.stringify({ rates, time: ratesUpdatedAt }));
+        if (force) showToast('Курсы валют обновлены');
+      } else { throw new Error('bad response'); }
+    } catch (e) {
+      if (cache) { rates = cache.rates; ratesUpdatedAt = cache.time; }
+      else { rates = FALLBACK_RATES; ratesUpdatedAt = null; }
+      if (force) showToast('Не удалось получить курс, используем сохранённый', { error: true });
+    }
+    if (btn) btn.classList.remove('animate-spin');
+    updateRatesUI();
+    renderAll();
+  }
+  function updateRatesUI() {
+    const ticker = document.getElementById('ratesTicker');
+    const label = document.getElementById('ratesUpdatedLabel');
+    if (ticker) {
+      ticker.innerHTML = ['USD', 'EUR', 'BYN'].map(cur => {
+        const v = convert(1, cur, 'RUB');
+        const t = rateTrend[cur];
+        const arrow = t === 'up' ? '<span class="text-[#30D158]">▲</span>' : t === 'down' ? '<span class="text-[#FF453A]">▼</span>' : '';
+        return `<span class="shrink-0 inline-flex items-center gap-1">${CURRENCIES[cur].symbol}1≈${v.toLocaleString('ru-RU', { maximumFractionDigits: 1 })}₽ ${arrow}</span>`;
+      }).join('<span class="text-white/15">·</span>');
+    }
+    if (label) label.textContent = ratesUpdatedAt ? ('Обновлено ' + timeAgo(ratesUpdatedAt)) : 'Офлайн-курс (примерный)';
+  }
+
+  // ---------- Rendering ----------
+  function renderAll() { renderBalance(); renderTransactions(); renderGoals(); renderAnalytics(); }
+
+  function renderCurrencySelector() {
+    document.getElementById('currencySelector').innerHTML = Object.keys(CURRENCIES).map(cur => {
+      const active = cur === displayCurrency;
+      return `<button data-cur="${cur}" onclick="setDisplayCurrency('${cur}')" class="cur-chip flex flex-col items-center justify-center gap-0.5 py-2.5 rounded-2xl transition-colors ${active ? 'bg-[#0A84FF] text-white' : 'bg-white/5 text-[#8E8E93]'}">
+        <span class="text-base font-bold">${CURRENCIES[cur].symbol}</span>
+        <span class="text-[10px] font-medium">${cur}</span>
+      </button>`;
+    }).join('');
+  }
+  function setDisplayCurrency(cur) {
+    if (cur === displayCurrency) return;
+    displayCurrency = cur;
+    localStorage.setItem('piggy_currency', cur);
+    renderCurrencySelector();
+    updateRatesUI();
+    renderAll();
+  }
+
+  function renderBalance() {
+    const target = convert(calcBalance(), 'RUB', displayCurrency);
+    animateValue(document.getElementById('balanceAmount'), lastBalanceDisplay, target, 500, v => fmRaw(v, displayCurrency));
+    lastBalanceDisplay = target;
+    document.getElementById('incomeAmount').textContent = fmDisplay(calcIncome());
+    document.getElementById('expenseAmount').textContent = fmDisplay(calcExpense());
+  }
+
+  function renderTransactions() {
+    const list = document.getElementById('transactionsList');
+    const empty = document.getElementById('transactionsEmpty');
+    const sorted = [...transactions].sort((a, b) => b.date - a.date);
+    if (sorted.length === 0) { list.innerHTML = ''; empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden');
+    list.innerHTML = sorted.map((t, i) => {
+      const cat = getCategoryInfo(t);
+      const sign = t.type === 'income' ? '+' : '−';
+      const colorClass = t.type === 'income' ? 'text-[#30D158]' : 'text-[#FF453A]';
+      const deleteBtn = t.isSaving ? '' : `<button onclick="deleteTransaction('${t.id}')" class="text-[#8E8E93] active:scale-90 active:text-[#FF453A] transition-transform p-2 -mr-1.5 shrink-0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V7m2 0-.8 12.2A2 2 0 0 1 14.2 21H9.8a2 2 0 0 1-2-1.8L7 7"/></svg></button>`;
+      const originalLine = (t.entryCurrency && t.entryCurrency !== displayCurrency)
+        ? `<p class="text-[10px] text-[#8E8E93]/80 truncate">введено: ${fmRaw(t.entryAmount, t.entryCurrency)}</p>` : '';
+      const swipeAttr = t.isSaving ? '' : `data-id="${t.id}"`;
+      return `<div class="relative rounded-2xl overflow-hidden card-enter" style="animation-delay:${Math.min(i,8)*30}ms">
+        <div class="absolute inset-0 bg-[#FF453A] flex items-center justify-end pr-6">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V7m2 0-.8 12.2A2 2 0 0 1 14.2 21H9.8a2 2 0 0 1-2-1.8L7 7"/></svg>
+        </div>
+        <div class="txn-fg relative flex items-center gap-3 bg-[#1c1c1e] rounded-2xl p-3.5" ${swipeAttr} style="transition:transform .25s ease">
+          <div class="w-11 h-11 rounded-full flex items-center justify-center text-xl shrink-0" style="background:${cat.color}22">${cat.icon}</div>
+          <div class="flex-1 min-w-0">
+            <p class="font-medium truncate">${escapeHtml(cat.name)}</p>
+            <p class="text-xs text-[#8E8E93] truncate">${t.comment ? escapeHtml(t.comment) + ' · ' : ''}${formatDate(t.date)}</p>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="${colorClass} font-semibold">${sign}${fmDisplay(t.amount)}</p>
+            ${originalLine}
+          </div>
+          ${deleteBtn}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function goalsOverallPct() {
+    const totalTarget = goals.reduce((s, g) => s + g.target, 0);
+    const totalCollected = goals.reduce((s, g) => s + Math.min(g.collected, g.target), 0);
+    return totalTarget > 0 ? Math.min(100, Math.round((totalCollected / totalTarget) * 100)) : 0;
+  }
+  function updateGoalsRing() {
+    const card = document.getElementById('goalsSummaryCard');
+    if (goals.length === 0) { card.classList.add('hidden'); return; }
+    card.classList.remove('hidden');
+    const pct = goalsOverallPct();
+    const circumference = 169.6;
+    const offset = circumference - (circumference * pct / 100);
+    document.getElementById('goalsRingProgress').setAttribute('stroke-dashoffset', offset);
+    document.getElementById('goalsRingLabel').textContent = pct + '%';
+    const totalCollected = goals.reduce((s, g) => s + g.collected, 0);
+    const totalTarget = goals.reduce((s, g) => s + g.target, 0);
+    document.getElementById('goalsRingSub').textContent = `${fmDisplay(totalCollected)} из ${fmDisplay(totalTarget)}`;
+  }
+
+  function renderGoals() {
+    const list = document.getElementById('goalsList');
+    const empty = document.getElementById('goalsEmpty');
+    updateGoalsRing();
+    if (goals.length === 0) { list.innerHTML = ''; empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden');
+    list.innerHTML = goals.map((g, i) => {
+      const pct = g.target > 0 ? Math.min(100, Math.round((g.collected / g.target) * 100)) : 0;
+      const done = g.collected >= g.target;
+      const celebrate = g.id === justCompletedGoalId;
+      return `<div id="goal-${g.id}" class="bg-[#1c1c1e] rounded-2xl p-4 card-enter ${celebrate ? 'goal-celebrate' : ''}" style="animation-delay:${i*40}ms">
+        <div class="flex justify-between items-start mb-2 gap-2">
+          <div class="min-w-0">
+            <p class="font-semibold text-[17px] truncate">${escapeHtml(g.name)}</p>
+            <p class="text-xs text-[#8E8E93] mt-0.5">${fmDisplay(g.collected)} из ${fmDisplay(g.target)}</p>
+          </div>
+          <span class="text-xs font-semibold px-2 py-1 rounded-full shrink-0 ${done ? 'bg-[#30D158]/15 text-[#30D158]' : 'bg-[#FFD60A]/15 text-[#FFD60A]'}">${done ? 'Готово 🎉' : pct + '%'}</span>
+        </div>
+        <div class="h-2.5 bg-white/10 rounded-full overflow-hidden mb-3">
+          <div class="h-full rounded-full transition-all duration-500" style="width:${pct}%; background:linear-gradient(90deg,#FFD60A,#FF9F0A)"></div>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="openTopUpSheet('${g.id}')" class="flex-1 bg-white/10 active:bg-white/20 active:scale-[0.98] transition-all rounded-xl py-2.5 font-medium text-sm">Пополнить</button>
+          <button onclick="deleteGoal('${g.id}')" class="px-3 text-[#FF453A]/80 active:scale-90 transition-transform text-sm">Удалить</button>
+        </div>
+      </div>`;
+    }).join('');
+    justCompletedGoalId = null;
+  }
+
+  function renderAnalytics() {
+    const income = calcIncome(), expense = calcExpense(), total = income + expense;
+    const incomePct = total ? Math.round((income / total) * 100) : 0;
+    const expensePct = total ? 100 - incomePct : 0;
+    document.getElementById('ivsBarIncome').style.width = incomePct + '%';
+    document.getElementById('ivsBarExpense').style.width = expensePct + '%';
+    document.getElementById('ivsIncomeLabel').textContent = 'Доходы ' + fmDisplay(income);
+    document.getElementById('ivsExpenseLabel').textContent = 'Расходы ' + fmDisplay(expense);
+
+    const byCat = {};
+    transactions.filter(t => t.type === 'expense').forEach(t => {
+      const key = t.isSaving ? SAVING_CATEGORY.name : t.category;
+      byCat[key] = (byCat[key] || 0) + t.amount;
+    });
+    const entries = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
+    const catBars = document.getElementById('categoryBars');
+    const catEmpty = document.getElementById('analyticsEmpty');
+    if (entries.length === 0) { catBars.innerHTML = ''; catEmpty.classList.remove('hidden'); return; }
+    catEmpty.classList.add('hidden');
+    const allCats = [...EXPENSE_CATEGORIES, SAVING_CATEGORY];
+    catBars.innerHTML = entries.map(([name, amount], i) => {
+      const info = allCats.find(c => c.name === name) || { icon: '❓', color: '#8E8E93' };
+      const pct = expense ? Math.round((amount / expense) * 100) : 0;
+      return `<div class="mb-3.5 card-enter" style="animation-delay:${i*40}ms">
+        <div class="flex justify-between items-center mb-1.5 gap-2">
+          <span class="flex items-center gap-2 text-sm font-medium truncate"><span>${info.icon}</span>${escapeHtml(name)}</span>
+          <span class="text-sm text-[#8E8E93] shrink-0">${fmDisplay(amount)} · ${pct}%</span>
+        </div>
+        <div class="h-2 bg-white/10 rounded-full overflow-hidden">
+          <div class="h-full rounded-full transition-all duration-700" style="width:${pct}%; background:${info.color}"></div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderChangelog() {
+    document.getElementById('changelogList').innerHTML = CHANGELOG.map(v => `
+      <div class="mb-5">
+        <div class="flex items-baseline gap-2 mb-2">
+          <span class="font-bold text-[15px]">v${v.version}</span>
+          <span class="text-xs text-[#8E8E93]">${v.date}</span>
+        </div>
+        <ul class="space-y-1.5">
+          ${v.items.map(it => `<li class="text-sm text-white/80 flex gap-2"><span class="text-[#FFD60A] shrink-0">•</span><span>${escapeHtml(it)}</span></li>`).join('')}
+        </ul>
+      </div>`).join('');
+  }
+
+  // ---------- Tabs ----------
+  function switchTab(tab) {
+    currentTab = tab;
+    Object.entries(TAB_IDS).forEach(([key, id]) => {
+      const sec = document.getElementById(id);
+      if (key === tab) {
+        sec.classList.remove('hidden');
+        sec.classList.remove('tab-anim'); void sec.offsetWidth; sec.classList.add('tab-anim');
+      } else { sec.classList.add('hidden'); }
+    });
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      const active = btn.dataset.tab === tab;
+      btn.classList.toggle('text-[#0A84FF]', active);
+      btn.classList.toggle('text-[#8E8E93]', !active);
+    });
+    if (tab === 'goals') renderGoals();
+    if (tab === 'analytics') renderAnalytics();
+    if (tab === 'home') { renderBalance(); renderTransactions(); }
+  }
+
+  // ---------- Sheets ----------
+  function openSheet(id) {
+    currentSheetId = id;
+    const backdrop = document.getElementById('backdrop');
+    backdrop.classList.remove('opacity-0', 'pointer-events-none');
+    backdrop.classList.add('opacity-100');
+    document.getElementById(id).classList.remove('translate-y-full');
+  }
+  function closeSheet(id) {
+    document.getElementById(id).classList.add('translate-y-full');
+    const backdrop = document.getElementById('backdrop');
+    backdrop.classList.add('opacity-0');
+    backdrop.classList.remove('opacity-100');
+    setTimeout(() => backdrop.classList.add('pointer-events-none'), 300);
+    currentSheetId = null;
+  }
+  function closeCurrentSheet() { if (currentSheetId) closeSheet(currentSheetId); }
+
+  function enableDrag(sheetId, handleId) {
+    const sheet = document.getElementById(sheetId);
+    const handle = document.getElementById(handleId);
+    let startY = 0, dy = 0, dragging = false;
+    handle.addEventListener('touchstart', e => { dragging = true; startY = e.touches[0].clientY; sheet.style.transition = 'none'; }, { passive: true });
+    handle.addEventListener('touchmove', e => {
+      if (!dragging) return;
+      dy = Math.max(0, e.touches[0].clientY - startY);
+      sheet.style.transform = `translateY(${dy}px)`;
+    }, { passive: true });
+    handle.addEventListener('touchend', () => {
+      dragging = false;
+      sheet.style.transition = '';
+      sheet.style.transform = '';
+      if (dy > 90) closeSheet(sheetId);
+      dy = 0;
+    });
+  }
+
+  // ---------- Swipe to delete ----------
+  function initSwipeDelete() {
+    const list = document.getElementById('transactionsList');
+    let activeEl = null, id = null, startX = 0, dx = 0, dragging = false;
+    list.addEventListener('touchstart', e => {
+      const fg = e.target.closest('.txn-fg');
+      if (!fg || !fg.dataset.id) return;
+      activeEl = fg; id = fg.dataset.id; startX = e.touches[0].clientX; dx = 0; dragging = true;
+      activeEl.style.transition = 'none';
+    }, { passive: true });
+    list.addEventListener('touchmove', e => {
+      if (!dragging || !activeEl) return;
+      dx = Math.min(0, e.touches[0].clientX - startX);
+      activeEl.style.transform = `translateX(${dx}px)`;
+    }, { passive: true });
+    list.addEventListener('touchend', () => {
+      if (!dragging || !activeEl) return;
+      dragging = false;
+      activeEl.style.transition = '';
+      if (dx < -90) {
+        const el = activeEl, delId = id;
+        el.style.transform = 'translateX(-100%)';
+        el.style.opacity = '0';
+        setTimeout(() => deleteTransaction(delId), 180);
+      } else {
+        activeEl.style.transform = '';
+      }
+      activeEl = null; dx = 0;
+    });
+  }
+
+  // ---------- Pull to refresh ----------
+  function initPullToRefresh() {
+    const main = document.getElementById('mainScroll');
+    const indicator = document.getElementById('pullIndicator');
+    let startY = 0, pulling = false, dy = 0;
+    main.addEventListener('touchstart', e => {
+      if (window.scrollY <= 0 && currentTab === 'home') { startY = e.touches[0].clientY; pulling = true; dy = 0; }
+    }, { passive: true });
+    main.addEventListener('touchmove', e => {
+      if (!pulling) return;
+      dy = e.touches[0].clientY - startY;
+      if (dy > 0 && window.scrollY <= 0) {
+        indicator.style.opacity = Math.min(1, dy / 70);
+        indicator.style.transform = `rotate(${Math.min(dy * 3, 360)}deg)`;
+      }
+    }, { passive: true });
+    main.addEventListener('touchend', () => {
+      if (pulling && dy > 70) fetchRates(true);
+      pulling = false; dy = 0;
+      indicator.style.opacity = 0;
+      indicator.style.transform = '';
+    });
+  }
+
+  // ---------- Add Transaction ----------
+  function setType(type) {
+    selectedType = type;
+    const slider = document.getElementById('segSlider');
+    const expenseBtn = document.getElementById('segExpenseBtn');
+    const incomeBtn = document.getElementById('segIncomeBtn');
+    if (type === 'expense') {
+      slider.style.transform = 'translateX(0%)'; slider.style.background = '#FF453A';
+      expenseBtn.classList.add('text-white'); expenseBtn.classList.remove('text-[#8E8E93]');
+      incomeBtn.classList.add('text-[#8E8E93]'); incomeBtn.classList.remove('text-white');
+    } else {
+      slider.style.transform = 'translateX(100%)'; slider.style.background = '#30D158';
+      incomeBtn.classList.add('text-white'); incomeBtn.classList.remove('text-[#8E8E93]');
+      expenseBtn.classList.add('text-[#8E8E93]'); expenseBtn.classList.remove('text-white');
+    }
+    renderCategoryGrid();
+  }
+  function renderCategoryGrid() {
+    const cats = selectedType === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
+    document.getElementById('categoryGrid').innerHTML = cats.map(c =>
+      `<button type="button" data-cat="${c.name}" onclick="selectCategory('${c.name}')" class="cat-chip flex flex-col items-center gap-1 py-3 rounded-2xl bg-white/5 active:scale-95 transition-all border-2 border-transparent">
+        <span class="text-2xl">${c.icon}</span>
+        <span class="text-[10.5px] font-medium text-[#8E8E93] leading-tight text-center">${c.name}</span>
+      </button>`).join('');
+    selectedCategory = null;
+    updateSaveButtonState();
+  }
+  function selectCategory(name) {
+    selectedCategory = name;
+    const accent = selectedType === 'expense' ? '#FF453A' : '#30D158';
+    document.querySelectorAll('.cat-chip').forEach(el => {
+      if (el.dataset.cat === name) { el.style.borderColor = accent; el.classList.add('bg-white/10'); }
+      else { el.style.borderColor = 'transparent'; el.classList.remove('bg-white/10'); }
+    });
+    updateSaveButtonState();
+  }
+  function renderEntryCurrencyChips() {
+    document.getElementById('entryCurrencyChips').innerHTML = Object.keys(CURRENCIES).map(cur => {
+      const active = cur === selectedEntryCurrency;
+      return `<button type="button" data-cur="${cur}" onclick="selectEntryCurrency('${cur}')" class="entry-cur-chip shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${active ? 'bg-white text-black' : 'bg-white/5 text-[#8E8E93]'}">${cur}</button>`;
+    }).join('');
+  }
+  function selectEntryCurrency(cur) {
+    selectedEntryCurrency = cur;
+    document.getElementById('amountCurrencySymbol').textContent = CURRENCIES[cur].symbol;
+    renderEntryCurrencyChips();
+  }
+  function updateSaveButtonState() {
+    const amt = parseFloat(document.getElementById('amountInput').value);
+    document.getElementById('addSaveBtn').disabled = !(amt > 0 && selectedCategory);
+  }
+  function resetAddForm() {
+    document.getElementById('amountInput').value = '';
+    document.getElementById('commentInput').value = '';
+    selectedCategory = null;
+    selectedEntryCurrency = displayCurrency;
+    document.getElementById('amountCurrencySymbol').textContent = CURRENCIES[displayCurrency].symbol;
+    renderEntryCurrencyChips();
+  }
+  function openAddSheet() { resetAddForm(); setType('expense'); openSheet('addSheet'); }
+
+  async function saveTransaction() {
+    const entered = parseFloat(document.getElementById('amountInput').value);
+    if (!(entered > 0) || !selectedCategory) return;
+    const comment = document.getElementById('commentInput').value.trim();
+    const amountRUB = convert(entered, selectedEntryCurrency, 'RUB');
+    const row = { user_id: currentUser.id, type: selectedType, category: selectedCategory, amount: amountRUB, entry_amount: entered, entry_currency: selectedEntryCurrency, comment };
+    const { data, error } = await sb.from('transactions').insert(row).select().single();
+    if (error) { showToast('Не удалось сохранить: ' + error.message, { error: true }); return; }
+    transactions.unshift({ id: data.id, type: data.type, category: data.category, amount: Number(data.amount), entryAmount: Number(data.entry_amount), entryCurrency: data.entry_currency, comment: data.comment, isSaving: data.is_saving, date: new Date(data.created_at).getTime() });
+    closeSheet('addSheet');
+    renderAll();
+    showToast((selectedType === 'income' ? 'Доход' : 'Расход') + ' добавлен');
+  }
+  async function deleteTransaction(id) {
+    const idx = transactions.findIndex(t => t.id === id);
+    if (idx === -1) return;
+    const [removed] = transactions.splice(idx, 1);
+    renderAll();
+    const { error } = await sb.from('transactions').delete().eq('id', id);
+    if (error) { transactions.splice(idx, 0, removed); renderAll(); showToast('Не удалось удалить: ' + error.message, { error: true }); return; }
+    showToast('Операция удалена', { actionLabel: 'Отменить', onAction: async () => {
+      const row = { user_id: currentUser.id, type: removed.type, category: removed.category, amount: removed.amount, entry_amount: removed.entryAmount, entry_currency: removed.entryCurrency, comment: removed.comment, is_saving: removed.isSaving };
+      const { data } = await sb.from('transactions').insert(row).select().single();
+      if (data) { transactions.splice(idx, 0, { ...removed, id: data.id, date: new Date(data.created_at).getTime() }); renderAll(); }
+    } });
+  }
+
+  // ---------- Camera ----------
+  function openCameraSheet() {
+    const sheet = document.getElementById('cameraSheet');
+    sheet.classList.remove('hidden'); sheet.classList.add('flex');
+    startCamera();
+  }
+  function closeCameraSheetUI() {
+    if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+    const sheet = document.getElementById('cameraSheet');
+    sheet.classList.add('hidden'); sheet.classList.remove('flex');
+    const video = document.getElementById('cameraVideo');
+    if (video) video.srcObject = null;
+  }
+  async function startCamera() {
+    const hint = document.getElementById('cameraHint');
+    if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
+      closeCameraSheetUI();
+      showToast('Камера недоступна в этом браузере', { actionLabel: 'Выбрать фото', onAction: () => document.getElementById('receiptInput').click(), error: true });
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+      cameraStream = stream;
+      const video = document.getElementById('cameraVideo');
+      video.srcObject = stream;
+      if (hint) hint.classList.add('hidden');
+    } catch (err) {
+      closeCameraSheetUI();
+      showToast('Нет доступа к камере', { actionLabel: 'Выбрать фото', onAction: () => document.getElementById('receiptInput').click(), error: true });
+    }
+  }
+  function triggerGalleryFallback() {
+    closeCameraSheetUI();
+    document.getElementById('receiptInput').click();
+  }
+  function capturePhoto() {
+    const video = document.getElementById('cameraVideo');
+    const canvas = document.getElementById('cameraCanvas');
+    if (!video.videoWidth) { showToast('Камера ещё загружается, подождите секунду', { error: true }); return; }
+    canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+    closeCameraSheetUI();
+    canvas.toBlob(blob => { if (blob) processReceiptImage(blob); }, 'image/jpeg', 0.92);
+  }
+
+  // ---------- Receipt AI scan ----------
+  let pendingReceiptParsed = null;
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+  function setReceiptStatusText(msg) {
+    const el = document.getElementById('receiptStatusText');
+    if (el) el.textContent = msg;
+  }
+  async function processReceiptImage(fileOrBlob) {
+    const statusEl = document.getElementById('receiptStatus');
+    const confirmEl = document.getElementById('receiptConfirm');
+    confirmEl.classList.add('hidden');
+    statusEl.classList.remove('hidden'); statusEl.classList.add('flex');
+    setReceiptStatusText('Загружаю фото…');
+    try {
+      const base64 = await fileToBase64(fileOrBlob);
+      setReceiptStatusText('ИИ смотрит на чек…');
+      const resp = await fetch('/api/scan-receipt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: base64, mediaType: fileOrBlob.type || 'image/jpeg' }),
+      });
+      const parsed = await resp.json();
+      if (!resp.ok || parsed.error) throw new Error(parsed.error || 'Ошибка распознавания');
+      statusEl.classList.add('hidden'); statusEl.classList.remove('flex');
+
+      if (!parsed.amount) {
+        showToast('Не удалось найти сумму, введите вручную', { error: true });
+        return;
+      }
+      pendingReceiptParsed = parsed;
+      const lines = [];
+      lines.push(`Сумма: <b>${parsed.amount}</b> ${parsed.currency || ''}`);
+      if (parsed.store) lines.push(`Магазин: <b>${escapeHtml(parsed.store)}</b>`);
+      if (parsed.category) lines.push(`Категория: <b>${escapeHtml(parsed.category)}</b>`);
+      if (parsed.confidence === 'low') lines.push(`<span class="text-[#FF9F0A]">Не совсем уверен, лучше проверьте</span>`);
+      document.getElementById('receiptConfirmText').innerHTML = lines.join('<br>');
+      confirmEl.classList.remove('hidden');
+    } catch (err) {
+      statusEl.classList.add('hidden'); statusEl.classList.remove('flex');
+      showToast('Не удалось распознать чек: ' + err.message, { error: true });
+    }
+  }
+  function confirmReceipt(accept) {
+    document.getElementById('receiptConfirm').classList.add('hidden');
+    if (!accept || !pendingReceiptParsed) { pendingReceiptParsed = null; return; }
+    const parsed = pendingReceiptParsed;
+    if (parsed.currency && CURRENCIES[parsed.currency] && parsed.currency !== selectedEntryCurrency) selectEntryCurrency(parsed.currency);
+    if (parsed.amount) document.getElementById('amountInput').value = String(parsed.amount).replace('.', ',');
+    if (selectedType !== 'expense') setType('expense');
+    if (parsed.store) document.getElementById('commentInput').value = 'Чек: ' + parsed.store;
+    const cat = EXPENSE_CATEGORIES.find(c => c.name === parsed.category) ? parsed.category : 'Другое';
+    selectCategory(cat);
+    updateSaveButtonState();
+    pendingReceiptParsed = null;
+    showToast('Заполнено, проверьте перед сохранением');
+  }
+  function handleReceiptFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    processReceiptImage(file);
+    e.target.value = '';
+  }
+
+  // ---------- Goals ----------
+  const FREE_GOALS_LIMIT = 3;
+  function openGoalSheet() {
+    if (!userIsPremium && goals.length >= FREE_GOALS_LIMIT) { openPremiumSheet(); return; }
+    document.getElementById('goalNameInput').value = '';
+    document.getElementById('goalTargetInput').value = '';
+    document.getElementById('goalCurrencySymbol').textContent = CURRENCIES[displayCurrency].symbol;
+    openSheet('goalSheet');
+  }
+  async function saveGoal() {
+    const name = document.getElementById('goalNameInput').value.trim();
+    const enteredTarget = parseFloat(document.getElementById('goalTargetInput').value);
+    if (!name || !(enteredTarget > 0)) { showToast('Заполните название и сумму', { error: true }); return; }
+    const target = convert(enteredTarget, displayCurrency, 'RUB');
+    const { data, error } = await sb.from('goals').insert({ user_id: currentUser.id, name, target, collected: 0 }).select().single();
+    if (error) { showToast('Не удалось создать цель: ' + error.message, { error: true }); return; }
+    goals.push({ id: data.id, name: data.name, target: Number(data.target), collected: Number(data.collected), date: new Date(data.created_at).getTime() });
+    closeSheet('goalSheet');
+    renderGoals();
+    showToast('Цель создана 🎯');
+  }
+  async function deleteGoal(id) {
+    if (!confirm('Удалить цель? Уже накопленные средства не вернутся на баланс.')) return;
+    const { error } = await sb.from('goals').delete().eq('id', id);
+    if (error) { showToast('Не удалось удалить: ' + error.message, { error: true }); return; }
+    goals = goals.filter(g => g.id !== id);
+    renderGoals();
+    showToast('Цель удалена');
+  }
+  function openTopUpSheet(id) {
+    topUpGoalId = id;
+    const g = goals.find(x => x.id === id);
+    if (!g) return;
+    document.getElementById('topUpGoalName').textContent = g.name;
+    document.getElementById('topUpBalanceLabel').textContent = 'Доступно на балансе: ' + fmDisplay(calcBalance());
+    document.getElementById('topUpAmountInput').value = '';
+    document.getElementById('topUpCurrencySymbol').textContent = CURRENCIES[displayCurrency].symbol;
+    openSheet('topUpSheet');
+  }
+  function checkAchievements() {
+    const totalSaved = transactions.filter(t => t.isSaving).reduce((s, t) => s + t.amount, 0);
+    let unlocked = [];
+    try { unlocked = JSON.parse(localStorage.getItem('piggy_achievements')) || []; } catch (e) {}
+    const newly = ACHIEVEMENT_THRESHOLDS.filter(th => totalSaved >= th && !unlocked.includes(th));
+    if (newly.length) {
+      const th = Math.max(...newly);
+      localStorage.setItem('piggy_achievements', JSON.stringify([...unlocked, ...newly]));
+      setTimeout(() => showToast(`🏅 Достижение: накоплено ${fmDisplay(th)}!`), 900);
+    }
+  }
+  async function saveTopUp() {
+    const entered = parseFloat(document.getElementById('topUpAmountInput').value);
+    if (!(entered > 0)) { showToast('Введите сумму', { error: true }); return; }
+    const amountRUB = convert(entered, displayCurrency, 'RUB');
+    const balance = calcBalance();
+    if (amountRUB > balance + 0.005) { showToast('Недостаточно средств на балансе', { error: true }); return; }
+    const g = goals.find(x => x.id === topUpGoalId);
+    if (!g) return;
+    const wasDone = g.collected >= g.target;
+    const newCollected = g.collected + amountRUB;
+    const [goalRes, txRes] = await Promise.all([
+      sb.from('goals').update({ collected: newCollected }).eq('id', g.id),
+      sb.from('transactions').insert({ user_id: currentUser.id, type: 'expense', category: SAVING_CATEGORY.name, is_saving: true, amount: amountRUB, entry_amount: entered, entry_currency: displayCurrency, comment: `Пополнение цели «${g.name}»` }).select().single(),
+    ]);
+    if (goalRes.error || txRes.error) { showToast('Не удалось пополнить цель', { error: true }); return; }
+    g.collected = newCollected;
+    transactions.unshift({ id: txRes.data.id, type: 'expense', category: SAVING_CATEGORY.name, isSaving: true, amount: amountRUB, entryAmount: entered, entryCurrency: displayCurrency, comment: `Пополнение цели «${g.name}»`, date: new Date(txRes.data.created_at).getTime() });
+    closeSheet('topUpSheet');
+    const newlyDone = !wasDone && g.collected >= g.target;
+    if (newlyDone) justCompletedGoalId = g.id;
+    renderAll();
+    showToast(newlyDone ? `🎉 Цель «${g.name}» достигнута!` : `Цель «${g.name}» пополнена на ${fmRaw(entered, displayCurrency)}`);
+    checkAchievements();
+  }
+
+  // ---------- Changelog ----------
+  function openChangelog() {
+    renderChangelog();
+    openSheet('changelogSheet');
+    localStorage.setItem('piggy_last_seen_version', CHANGELOG[0].version);
+    document.getElementById('changelogDot').classList.add('hidden');
+  }
+
+  // ---------- Toast ----------
+  function showToast(message, opts = {}) {
+    const container = document.getElementById('toastContainer');
+    const el = document.createElement('div');
+    el.className = 'pointer-events-auto max-w-full bg-[#2c2c2e]/95 backdrop-blur-xl text-white text-sm font-medium px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 toast-in border border-white/10';
+    el.innerHTML = `<span class="flex-1">${escapeHtml(message)}</span>` + (opts.actionLabel ? `<button class="text-[#0A84FF] font-semibold shrink-0">${escapeHtml(opts.actionLabel)}</button>` : '');
+    if (opts.error) el.style.borderColor = 'rgba(255,69,58,0.4)';
+    container.appendChild(el);
+    let done = false;
+    const remove = () => { if (done) return; done = true; el.classList.add('toast-out'); setTimeout(() => el.remove(), 220); };
+    if (opts.actionLabel && opts.onAction) el.querySelector('button').addEventListener('click', () => { opts.onAction(); remove(); });
+    setTimeout(remove, opts.actionLabel ? 5000 : 2600);
+  }
+
+  // ---------- Init ----------
+  function init() {
+    ['amountInput', 'goalTargetInput', 'topUpAmountInput'].forEach(id => document.getElementById(id).addEventListener('input', sanitizeAmountInput));
+    document.getElementById('amountInput').addEventListener('input', updateSaveButtonState);
+    document.getElementById('receiptInput').addEventListener('change', handleReceiptFile);
+    document.getElementById('fabButton').addEventListener('click', () => { currentTab === 'goals' ? openGoalSheet() : openAddSheet(); });
+    document.getElementById('backdrop').addEventListener('click', closeCurrentSheet);
+    enableDrag('addSheet', 'addHandle');
+    enableDrag('goalSheet', 'goalHandle');
+    enableDrag('topUpSheet', 'topUpHandle');
+    enableDrag('changelogSheet', 'changelogHandle');
+    enableDrag('settingsSheet', 'settingsHandle');
+    enableDrag('premiumSheet', 'premiumHandle');
+    initSwipeDelete();
+    initPullToRefresh();
+
+    if (localStorage.getItem('piggy_last_seen_version') !== CHANGELOG[0].version) document.getElementById('changelogDot').classList.remove('hidden');
+
+    fetchRates(false);
+    // рендер данных запускается в sb.auth.onAuthStateChange после входа
+
+    try {
+      const iconHref = document.querySelector('link[rel="apple-touch-icon"]').getAttribute('href');
+      const manifest = { name: 'Умная Копилка и Трекер Расходов', short_name: 'Копилка', start_url: '.', display: 'standalone', background_color: '#000000', theme_color: '#000000', icons: [{ src: iconHref, sizes: '512x512', type: 'image/png' }] };
+      const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+      document.getElementById('manifestLink').setAttribute('href', URL.createObjectURL(blob));
+    } catch (e) {}
+  }
+  init();
+</script>
+</body>
+</html>
