@@ -153,6 +153,16 @@
           </div>
         </div>
 
+        <div id="budgetWidget" class="hidden bg-[#1c1c1e] rounded-2xl p-4 mb-4 fade-slide-up">
+          <div class="flex justify-between items-center mb-2">
+            <p class="text-sm font-medium text-[#8E8E93]">Бюджет на месяц</p>
+            <p id="budgetText" class="text-sm font-semibold"></p>
+          </div>
+          <div class="h-2.5 bg-white/10 rounded-full overflow-hidden">
+            <div id="budgetBar" class="h-full rounded-full transition-all duration-700" style="width:0%"></div>
+          </div>
+        </div>
+
         <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide mb-2">Валюта отображения</p>
         <div id="currencySelector" class="grid grid-cols-4 gap-2 mb-4"></div>
 
@@ -217,12 +227,18 @@
         </div>
 
         <h2 class="text-lg font-bold mb-3">Расходы по категориям</h2>
+        <div id="categoryDonut" class="relative w-40 h-40 mx-auto mb-6 fade-slide-up"></div>
         <div id="categoryBars"></div>
         <div id="analyticsEmpty" class="text-center py-14 text-[#8E8E93]">
           <p class="text-4xl mb-2">📊</p>
           <p class="font-medium text-white/80">Пока нет расходов</p>
           <p class="text-sm mt-1">Аналитика появится после первой операции</p>
         </div>
+
+        <button onclick="exportCSV()" class="w-full mt-6 flex items-center justify-center gap-2 bg-white/5 rounded-2xl py-3.5 font-medium text-sm active:scale-[0.98] transition-transform">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Экспорт операций в CSV
+        </button>
       </section>
 
     </main>
@@ -396,6 +412,13 @@
           <span id="salaryCurrencySymbol" class="text-[#8E8E93] text-sm">₽</span>
         </div>
         <p class="text-[11px] text-[#8E8E93] mb-5">Используется для будущей аналитики бюджета</p>
+
+        <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide mb-2">Бюджет на месяц (расходы)</p>
+        <div class="flex items-center gap-2 bg-white/5 rounded-xl px-4 py-3.5 mb-2 focus-within:ring-2 focus-within:ring-[#0A84FF]/40">
+          <input id="budgetInput" type="text" inputmode="decimal" placeholder="0 — без лимита" class="flex-1 bg-transparent text-[15px] outline-none">
+          <span id="budgetCurrencySymbol" class="text-[#8E8E93] text-sm">₽</span>
+        </div>
+        <p class="text-[11px] text-[#8E8E93] mb-5">Покажем прогресс-бар на главном экране</p>
         <button onclick="saveSalary()" class="w-full bg-[#0A84FF] active:scale-[0.98] transition-all rounded-2xl py-4 font-semibold text-[17px] mb-3">Сохранить</button>
         <button onclick="handleLogout()" class="w-full bg-white/5 text-[#FF453A] active:scale-[0.98] transition-all rounded-2xl py-3.5 font-semibold text-[15px]">Выйти из аккаунта</button>
       </div>
@@ -529,6 +552,7 @@
     userSalary = profileRes.data ? Number(profileRes.data.salary) || 0 : 0;
     userSalaryCurrency = profileRes.data ? profileRes.data.salary_currency || 'RUB' : 'RUB';
     userIsPremium = profileRes.data ? !!profileRes.data.is_premium : false;
+    userMonthlyBudget = profileRes.data ? Number(profileRes.data.monthly_budget) || 0 : 0;
     if (profileRes.data && profileRes.data.display_currency) { displayCurrency = profileRes.data.display_currency; }
     updatePremiumBadge();
   }
@@ -557,6 +581,7 @@
   let userSalary = 0;
   let userSalaryCurrency = 'RUB';
   let userIsPremium = false;
+  let userMonthlyBudget = 0;
   function updatePremiumBadge() {
     const btn = document.getElementById('settingsBtn');
     if (!btn) return;
@@ -570,15 +595,34 @@
   function openSettingsSheet() {
     document.getElementById('salaryCurrencySymbol').textContent = CURRENCIES[displayCurrency].symbol;
     document.getElementById('salaryInput').value = userSalary ? String(convert(userSalary, 'RUB', displayCurrency).toFixed(2)).replace('.00','') : '';
+    document.getElementById('budgetCurrencySymbol').textContent = CURRENCIES[displayCurrency].symbol;
+    document.getElementById('budgetInput').value = userMonthlyBudget ? String(convert(userMonthlyBudget, 'RUB', displayCurrency).toFixed(2)).replace('.00','') : '';
     openSheet('settingsSheet');
   }
   async function saveSalary() {
     const entered = parseFloat(document.getElementById('salaryInput').value) || 0;
     userSalary = convert(entered, displayCurrency, 'RUB');
     userSalaryCurrency = displayCurrency;
-    await sb.from('profiles').update({ salary: userSalary, salary_currency: userSalaryCurrency }).eq('id', currentUser.id);
+    const enteredBudget = parseFloat(document.getElementById('budgetInput').value) || 0;
+    userMonthlyBudget = convert(enteredBudget, displayCurrency, 'RUB');
+    await sb.from('profiles').update({ salary: userSalary, salary_currency: userSalaryCurrency, monthly_budget: userMonthlyBudget }).eq('id', currentUser.id);
     closeSheet('settingsSheet');
-    showToast('Зарплата сохранена');
+    renderBudgetWidget();
+    showToast('Настройки сохранены');
+  }
+  function renderBudgetWidget() {
+    const el = document.getElementById('budgetWidget');
+    if (!userMonthlyBudget) { el.classList.add('hidden'); return; }
+    el.classList.remove('hidden');
+    const now = new Date();
+    const spentThisMonth = transactions.filter(t => t.type === 'expense' && !t.isSaving && new Date(t.date).getMonth() === now.getMonth() && new Date(t.date).getFullYear() === now.getFullYear()).reduce((s, t) => s + t.amount, 0);
+    const pct = Math.min(100, Math.round((spentThisMonth / userMonthlyBudget) * 100));
+    const over = spentThisMonth > userMonthlyBudget;
+    document.getElementById('budgetText').textContent = `${fmDisplay(spentThisMonth)} / ${fmDisplay(userMonthlyBudget)}`;
+    document.getElementById('budgetText').className = over ? 'text-sm font-semibold text-[#FF453A]' : 'text-sm font-semibold';
+    const bar = document.getElementById('budgetBar');
+    bar.style.width = pct + '%';
+    bar.style.background = over ? '#FF453A' : (pct > 80 ? '#FF9F0A' : '#30D158');
   }
 
   // ---------- State ----------
@@ -727,7 +771,7 @@
   }
 
   // ---------- Rendering ----------
-  function renderAll() { renderBalance(); renderTransactions(); renderGoals(); renderAnalytics(); }
+  function renderAll() { renderBalance(); renderTransactions(); renderGoals(); renderAnalytics(); renderBudgetWidget(); }
 
   function renderCurrencySelector() {
     document.getElementById('currencySelector').innerHTML = Object.keys(CURRENCIES).map(cur => {
@@ -858,6 +902,24 @@
     if (entries.length === 0) { catBars.innerHTML = ''; catEmpty.classList.remove('hidden'); return; }
     catEmpty.classList.add('hidden');
     const allCats = [...EXPENSE_CATEGORIES, SAVING_CATEGORY];
+    const donutEl = document.getElementById('categoryDonut');
+    if (donutEl) {
+      const R = 60, C = 2 * Math.PI * R;
+      let offset = 0;
+      const segs = entries.map(([name, amount]) => {
+        const info = allCats.find(c => c.name === name) || { color: '#8E8E93' };
+        const frac = expense ? amount / expense : 0;
+        const len = frac * C;
+        const seg = `<circle r="${R}" cx="80" cy="80" fill="none" stroke="${info.color}" stroke-width="20" stroke-dasharray="${len} ${C - len}" stroke-dashoffset="${-offset}" transform="rotate(-90 80 80)" stroke-linecap="butt"/>`;
+        offset += len;
+        return seg;
+      }).join('');
+      donutEl.innerHTML = `<svg width="160" height="160" viewBox="0 0 160 160">${segs}</svg>
+        <div class="absolute inset-0 flex flex-col items-center justify-center">
+          <span class="text-[11px] text-[#8E8E93]">Расходы</span>
+          <span class="text-[15px] font-bold">${fmDisplay(expense)}</span>
+        </div>`;
+    }
     catBars.innerHTML = entries.map(([name, amount], i) => {
       const info = allCats.find(c => c.name === name) || { icon: '❓', color: '#8E8E93' };
       const pct = expense ? Math.round((amount / expense) * 100) : 0;
@@ -871,6 +933,24 @@
         </div>
       </div>`;
     }).join('');
+  }
+
+  function exportCSV() {
+    if (!transactions.length) { showToast('Нет операций для экспорта', { error: true }); return; }
+    const header = 'Дата,Тип,Категория,Сумма (RUB),Комментарий\n';
+    const rows = transactions.map(t => {
+      const d = new Date(t.date).toLocaleDateString('ru-RU');
+      const type = t.type === 'income' ? 'Доход' : 'Расход';
+      const comment = (t.comment || '').replace(/"/g, '""');
+      return `${d},${type},"${t.category}",${t.amount},"${comment}"`;
+    }).join('\n');
+    const blob = new Blob(['\uFEFF' + header + rows], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'kopilka-operations.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Файл скачан');
   }
 
   function renderChangelog() {
