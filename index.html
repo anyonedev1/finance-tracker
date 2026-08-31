@@ -153,6 +153,16 @@
           </div>
         </div>
 
+        <div id="dailyLimitWidget" class="hidden rounded-2xl p-4 mb-4 fade-slide-up" style="background:linear-gradient(120deg,#10241a,#0d1c14)">
+          <p class="text-xs text-[#8E8E93] mb-1">Можно потратить сегодня</p>
+          <p id="dailyLimitAmount" class="text-2xl font-bold text-[#30D158]"></p>
+        </div>
+
+        <button onclick="openRecurringSheet()" class="w-full flex items-center justify-between bg-[#1c1c1e] rounded-2xl px-4 py-3.5 mb-4 active:scale-[0.98] transition-transform">
+          <span class="flex items-center gap-2.5 text-sm font-medium"><span class="text-lg">🔁</span> Регулярные платежи</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+        </button>
+
         <div id="budgetWidget" class="hidden bg-[#1c1c1e] rounded-2xl p-4 mb-4 fade-slide-up">
           <div class="flex justify-between items-center mb-2">
             <p class="text-sm font-medium text-[#8E8E93]">Бюджет на месяц</p>
@@ -430,6 +440,19 @@
           <span id="budgetCurrencySymbol" class="text-[#8E8E93] text-sm">₽</span>
         </div>
         <p class="text-[11px] text-[#8E8E93] mb-5">Покажем прогресс-бар на главном экране</p>
+
+        <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide mb-2">Семейный бюджет</p>
+        <div class="bg-white/5 rounded-xl px-4 py-3.5 mb-2">
+          <p class="text-[11px] text-[#8E8E93] mb-1">Код приглашения — дайте его члену семьи</p>
+          <div class="flex items-center gap-2">
+            <p id="householdCode" class="flex-1 font-mono text-lg tracking-widest">------</p>
+            <button onclick="copyInviteCode()" class="text-[#0A84FF] text-sm font-semibold">Копировать</button>
+          </div>
+        </div>
+        <div class="flex gap-2 mb-5">
+          <input id="joinCodeInput" type="text" placeholder="Ввести код и присоединиться" class="flex-1 bg-white/5 rounded-xl px-4 py-3 outline-none text-sm uppercase">
+          <button onclick="joinHousehold()" class="bg-white/10 rounded-xl px-4 text-sm font-semibold">Войти</button>
+        </div>
         <button onclick="saveSalary()" class="w-full bg-[#0A84FF] active:scale-[0.98] transition-all rounded-2xl py-4 font-semibold text-[17px] mb-3">Сохранить</button>
         <button onclick="handleLogout()" class="w-full bg-white/5 text-[#FF453A] active:scale-[0.98] transition-all rounded-2xl py-3.5 font-semibold text-[15px]">Выйти из аккаунта</button>
       </div>
@@ -452,6 +475,37 @@
         </div>
         <button onclick="requestPremium()" class="w-full bg-[#FFD60A] text-black active:scale-[0.98] transition-all rounded-2xl py-4 font-semibold text-[17px] mb-3">Оформить Premium</button>
         <button onclick="closeSheet('premiumSheet')" class="w-full text-[#8E8E93] text-sm py-2">Не сейчас</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECURRING SHEET -->
+  <div id="recurringSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 ease-out">
+    <div class="max-w-md mx-auto bg-[#1c1c1e] rounded-t-3xl safe-bottom max-h-[85vh] flex flex-col">
+      <div id="recurringHandle" class="pt-3 pb-1 flex justify-center touch-none shrink-0"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
+      <div class="px-5 pb-6 pt-2 overflow-y-auto">
+        <div class="flex items-center justify-between mb-5">
+          <h2 class="text-xl font-bold">🔁 Регулярные платежи</h2>
+          <button onclick="closeSheet('recurringSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#8E8E93] active:scale-90 transition-transform">✕</button>
+        </div>
+        <div id="recurringList" class="mb-5"></div>
+        <div class="border-t border-white/10 pt-4">
+          <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide mb-2">Новый платёж</p>
+          <div id="recType" data-type="expense" class="flex gap-2 mb-3">
+            <button id="recTypeExpenseBtn" type="button" onclick="setRecType('expense')" class="flex-1 bg-[#FF453A] rounded-xl py-2 text-sm font-semibold">Расход</button>
+            <button id="recTypeIncomeBtn" type="button" onclick="setRecType('income')" class="flex-1 bg-white/10 rounded-xl py-2 text-sm font-semibold">Доход</button>
+          </div>
+          <input id="recNameInput" type="text" placeholder="Название (например, Интернет)" class="w-full bg-white/5 rounded-xl px-4 py-3 mb-2 outline-none text-sm">
+          <select id="recCategorySelect" class="w-full bg-white/5 rounded-xl px-4 py-3 mb-2 outline-none text-sm"></select>
+          <div class="flex gap-2 mb-2">
+            <div class="flex-1 flex items-center gap-2 bg-white/5 rounded-xl px-4 py-3">
+              <input id="recAmountInput" type="text" inputmode="decimal" placeholder="Сумма" class="flex-1 bg-transparent outline-none text-sm">
+              <span id="recCurrencySymbol" class="text-[#8E8E93] text-sm">₽</span>
+            </div>
+            <input id="recDayInput" type="number" min="1" max="28" placeholder="День" class="w-20 bg-white/5 rounded-xl px-3 py-3 outline-none text-sm">
+          </div>
+          <button onclick="saveRecurring()" class="w-full bg-[#0A84FF] active:scale-[0.98] transition-all rounded-2xl py-3.5 font-semibold text-[15px]">Добавить</button>
+        </div>
       </div>
     </div>
   </div>
@@ -571,20 +625,30 @@
     location.reload();
   }
 
+  let currentHousehold = null; // { id, name, invite_code, owner_id }
   async function loadUserData(userId) {
-    const [txRes, goalsRes, profileRes] = await Promise.all([
-      sb.from('transactions').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
-      sb.from('goals').select('*').eq('user_id', userId).order('created_at', { ascending: true }),
-      sb.from('profiles').select('*').eq('id', userId).single(),
-    ]);
-    transactions = (txRes.data || []).map(t => ({ id: t.id, type: t.type, category: t.category, amount: Number(t.amount), entryAmount: Number(t.entry_amount), entryCurrency: t.entry_currency, comment: t.comment, isSaving: t.is_saving, date: new Date(t.created_at).getTime() }));
-    goals = (goalsRes.data || []).map(g => ({ id: g.id, name: g.name, target: Number(g.target), collected: Number(g.collected), date: new Date(g.created_at).getTime() }));
+    const profileRes = await sb.from('profiles').select('*').eq('id', userId).single();
+    const hhId = profileRes.data ? profileRes.data.household_id : null;
     userSalary = profileRes.data ? Number(profileRes.data.salary) || 0 : 0;
     userSalaryCurrency = profileRes.data ? profileRes.data.salary_currency || 'RUB' : 'RUB';
     userIsPremium = profileRes.data ? !!profileRes.data.is_premium : false;
     userMonthlyBudget = profileRes.data ? Number(profileRes.data.monthly_budget) || 0 : 0;
     if (profileRes.data && profileRes.data.display_currency) { displayCurrency = profileRes.data.display_currency; }
     updatePremiumBadge();
+
+    if (!hhId) { transactions = []; goals = []; recurringPayments = []; return; }
+
+    const [txRes, goalsRes, hhRes, recRes] = await Promise.all([
+      sb.from('transactions').select('*').eq('household_id', hhId).order('created_at', { ascending: false }),
+      sb.from('goals').select('*').eq('household_id', hhId).order('created_at', { ascending: true }),
+      sb.from('households').select('*').eq('id', hhId).single(),
+      sb.from('recurring_payments').select('*').eq('household_id', hhId).order('day_of_month', { ascending: true }),
+    ]);
+    transactions = (txRes.data || []).map(t => ({ id: t.id, type: t.type, category: t.category, amount: Number(t.amount), entryAmount: Number(t.entry_amount), entryCurrency: t.entry_currency, comment: t.comment, isSaving: t.is_saving, date: new Date(t.created_at).getTime() }));
+    goals = (goalsRes.data || []).map(g => ({ id: g.id, name: g.name, target: Number(g.target), collected: Number(g.collected), date: new Date(g.created_at).getTime() }));
+    currentHousehold = hhRes.data || null;
+    recurringPayments = recRes.data || [];
+    await applyDueRecurringPayments();
   }
 
   sb.auth.onAuthStateChange(async (event, session) => {
@@ -612,6 +676,74 @@
   let userSalaryCurrency = 'RUB';
   let userIsPremium = false;
   let userMonthlyBudget = 0;
+  let recurringPayments = [];
+
+  async function applyDueRecurringPayments() {
+    if (!recurringPayments.length) return;
+    const now = new Date();
+    const monthKey = `${now.getFullYear()}-${now.getMonth()}`;
+    for (const rp of recurringPayments) {
+      if (rp.last_applied_month === monthKey) continue;
+      if (now.getDate() < rp.day_of_month) continue;
+      const amountRUB = convert(Number(rp.amount), rp.currency, 'RUB');
+      const { data } = await sb.from('transactions').insert({ user_id: currentUser.id, household_id: currentHousehold.id, type: rp.type, category: rp.category, amount: amountRUB, entry_amount: rp.amount, entry_currency: rp.currency, comment: `Регулярный платёж: ${rp.name}` }).select().single();
+      if (data) transactions.unshift({ id: data.id, type: data.type, category: data.category, amount: Number(data.amount), entryAmount: Number(data.entry_amount), entryCurrency: data.entry_currency, comment: data.comment, isSaving: false, date: new Date(data.created_at).getTime() });
+      await sb.from('recurring_payments').update({ last_applied_month: monthKey }).eq('id', rp.id);
+      rp.last_applied_month = monthKey;
+    }
+  }
+
+  function openRecurringSheet() {
+    document.getElementById('recCurrencySymbol').textContent = CURRENCIES[displayCurrency].symbol;
+    renderRecurringList();
+    openSheet('recurringSheet');
+  }
+  function renderRecurringList() {
+    const el = document.getElementById('recurringList');
+    if (!recurringPayments.length) { el.innerHTML = `<p class="text-sm text-[#8E8E93] text-center py-4">Пока нет регулярных платежей</p>`; return; }
+    el.innerHTML = recurringPayments.map(rp => `
+      <div class="flex items-center justify-between bg-white/5 rounded-xl px-3.5 py-3 mb-2">
+        <div>
+          <p class="text-sm font-medium">${escapeHtml(rp.name)}</p>
+          <p class="text-xs text-[#8E8E93]">${rp.day_of_month}-го числа · ${escapeHtml(rp.category)}</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-semibold ${rp.type === 'income' ? 'text-[#30D158]' : 'text-[#FF453A]'}">${rp.type === 'income' ? '+' : '-'}${fmRaw(Number(rp.amount), rp.currency)}</span>
+          <button onclick="deleteRecurring('${rp.id}')" class="text-[#8E8E93] active:scale-90 transition-transform">✕</button>
+        </div>
+      </div>`).join('');
+  }
+  async function saveRecurring() {
+    const name = document.getElementById('recNameInput').value.trim();
+    const amount = parseFloat(document.getElementById('recAmountInput').value);
+    const day = parseInt(document.getElementById('recDayInput').value);
+    if (!name || !(amount > 0) || !(day >= 1 && day <= 28)) { showToast('Заполните все поля (день — от 1 до 28)', { error: true }); return; }
+    const type = document.getElementById('recType').dataset.type || 'expense';
+    const cats = type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+    const category = document.getElementById('recCategorySelect').value || cats[0].name;
+    const { data, error } = await sb.from('recurring_payments').insert({ user_id: currentUser.id, household_id: currentHousehold.id, name, type, category, amount, currency: displayCurrency, day_of_month: day }).select().single();
+    if (error) { showToast('Не удалось сохранить: ' + error.message, { error: true }); return; }
+    recurringPayments.push(data);
+    document.getElementById('recNameInput').value = '';
+    document.getElementById('recAmountInput').value = '';
+    document.getElementById('recDayInput').value = '';
+    renderRecurringList();
+    showToast('Регулярный платёж добавлен');
+  }
+  async function deleteRecurring(id) {
+    await sb.from('recurring_payments').delete().eq('id', id);
+    recurringPayments = recurringPayments.filter(r => r.id !== id);
+    renderRecurringList();
+  }
+  function setRecType(type) {
+    document.getElementById('recType').dataset.type = type;
+    document.getElementById('recTypeIncomeBtn').classList.toggle('bg-[#30D158]', type === 'income');
+    document.getElementById('recTypeExpenseBtn').classList.toggle('bg-[#FF453A]', type === 'expense');
+    document.getElementById('recTypeIncomeBtn').classList.toggle('bg-white/10', type !== 'income');
+    document.getElementById('recTypeExpenseBtn').classList.toggle('bg-white/10', type !== 'expense');
+    const cats = type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+    document.getElementById('recCategorySelect').innerHTML = cats.map(c => `<option value="${c.name}">${c.icon} ${c.name}</option>`).join('');
+  }
   function updatePremiumBadge() {
     const btn = document.getElementById('settingsBtn');
     if (!btn) return;
@@ -627,7 +759,22 @@
     document.getElementById('salaryInput').value = userSalary ? String(convert(userSalary, 'RUB', displayCurrency).toFixed(2)).replace('.00','') : '';
     document.getElementById('budgetCurrencySymbol').textContent = CURRENCIES[displayCurrency].symbol;
     document.getElementById('budgetInput').value = userMonthlyBudget ? String(convert(userMonthlyBudget, 'RUB', displayCurrency).toFixed(2)).replace('.00','') : '';
+    document.getElementById('householdCode').textContent = currentHousehold ? currentHousehold.invite_code : '------';
     openSheet('settingsSheet');
+  }
+  function copyInviteCode() {
+    if (!currentHousehold) return;
+    navigator.clipboard?.writeText(currentHousehold.invite_code);
+    showToast('Код скопирован — отправьте его члену семьи');
+  }
+  async function joinHousehold() {
+    const code = document.getElementById('joinCodeInput').value.trim().toLowerCase();
+    if (!code) return;
+    const { data: hh, error } = await sb.from('households').select('*').eq('invite_code', code).single();
+    if (error || !hh) { showToast('Код не найден', { error: true }); return; }
+    await sb.from('profiles').update({ household_id: hh.id }).eq('id', currentUser.id);
+    showToast('Вы присоединились к семье! Перезагружаю…');
+    setTimeout(() => location.reload(), 1000);
   }
   async function saveSalary() {
     const entered = parseFloat(document.getElementById('salaryInput').value) || 0;
@@ -653,6 +800,19 @@
     const bar = document.getElementById('budgetBar');
     bar.style.width = pct + '%';
     bar.style.background = over ? '#FF453A' : (pct > 80 ? '#FF9F0A' : '#30D158');
+    renderDailyLimit(spentThisMonth, now);
+  }
+  function renderDailyLimit(spentThisMonth, now) {
+    const el = document.getElementById('dailyLimitWidget');
+    if (!userMonthlyBudget) { el.classList.add('hidden'); return; }
+    el.classList.remove('hidden');
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const daysLeft = daysInMonth - now.getDate() + 1;
+    const remaining = Math.max(0, userMonthlyBudget - spentThisMonth);
+    const perDay = daysLeft > 0 ? remaining / daysLeft : remaining;
+    const amountEl = document.getElementById('dailyLimitAmount');
+    amountEl.textContent = fmDisplay(perDay);
+    amountEl.className = 'text-2xl font-bold ' + (perDay > 0 ? 'text-[#30D158]' : 'text-[#FF453A]');
   }
 
   // ---------- State ----------
@@ -1213,7 +1373,7 @@
     if (!(entered > 0) || !selectedCategory) return;
     const comment = document.getElementById('commentInput').value.trim();
     const amountRUB = convert(entered, selectedEntryCurrency, 'RUB');
-    const row = { user_id: currentUser.id, type: selectedType, category: selectedCategory, amount: amountRUB, entry_amount: entered, entry_currency: selectedEntryCurrency, comment };
+    const row = { user_id: currentUser.id, household_id: currentHousehold.id, type: selectedType, category: selectedCategory, amount: amountRUB, entry_amount: entered, entry_currency: selectedEntryCurrency, comment };
     const { data, error } = await sb.from('transactions').insert(row).select().single();
     if (error) { showToast('Не удалось сохранить: ' + error.message, { error: true }); return; }
     transactions.unshift({ id: data.id, type: data.type, category: data.category, amount: Number(data.amount), entryAmount: Number(data.entry_amount), entryCurrency: data.entry_currency, comment: data.comment, isSaving: data.is_saving, date: new Date(data.created_at).getTime() });
@@ -1229,7 +1389,7 @@
     const { error } = await sb.from('transactions').delete().eq('id', id);
     if (error) { transactions.splice(idx, 0, removed); renderAll(); showToast('Не удалось удалить: ' + error.message, { error: true }); return; }
     showToast('Операция удалена', { actionLabel: 'Отменить', onAction: async () => {
-      const row = { user_id: currentUser.id, type: removed.type, category: removed.category, amount: removed.amount, entry_amount: removed.entryAmount, entry_currency: removed.entryCurrency, comment: removed.comment, is_saving: removed.isSaving };
+      const row = { user_id: currentUser.id, household_id: currentHousehold.id, type: removed.type, category: removed.category, amount: removed.amount, entry_amount: removed.entryAmount, entry_currency: removed.entryCurrency, comment: removed.comment, is_saving: removed.isSaving };
       const { data } = await sb.from('transactions').insert(row).select().single();
       if (data) { transactions.splice(idx, 0, { ...removed, id: data.id, date: new Date(data.created_at).getTime() }); renderAll(); }
     } });
@@ -1306,7 +1466,7 @@
       const resp = await fetch('/api/scan-receipt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64: base64, mediaType: fileOrBlob.type || 'image/jpeg' }),
+        body: JSON.stringify({ imageBase64: base64, mediaType: fileOrBlob.type || 'image/jpeg', householdId: currentHousehold?.id }),
       });
       const parsed = await resp.json();
       if (!resp.ok || parsed.error) throw new Error(parsed.error || 'Ошибка распознавания');
@@ -1317,11 +1477,24 @@
         return;
       }
       pendingReceiptParsed = parsed;
+
+      if (parsed.confidence === 'high') {
+        applyParsedToForm(parsed);
+        showToast('⚡ ИИ уверен и заполнил всё сам — проверьте перед сохранением');
+        pendingReceiptParsed = null;
+        return;
+      }
+
+      if (userAiClarifyEnabled && parsed.unclear_field) {
+        openClarifySheet(parsed);
+        return;
+      }
+
       const lines = [];
       lines.push(`Сумма: <b>${parsed.amount}</b> ${parsed.currency || ''}`);
       if (parsed.store) lines.push(`Магазин: <b>${escapeHtml(parsed.store)}</b>`);
       if (parsed.category) lines.push(`Категория: <b>${escapeHtml(parsed.category)}</b>`);
-      if (parsed.confidence === 'low') lines.push(`<span class="text-[#FF9F0A]">Не совсем уверен, лучше проверьте</span>`);
+      lines.push(`<span class="text-[#FF9F0A]">Не совсем уверен, лучше проверьте</span>`);
       document.getElementById('receiptConfirmText').innerHTML = lines.join('<br>');
       confirmEl.classList.remove('hidden');
     } catch (err) {
@@ -1329,10 +1502,7 @@
       showToast('Не удалось распознать чек: ' + err.message, { error: true });
     }
   }
-  function confirmReceipt(accept) {
-    document.getElementById('receiptConfirm').classList.add('hidden');
-    if (!accept || !pendingReceiptParsed) { pendingReceiptParsed = null; return; }
-    const parsed = pendingReceiptParsed;
+  function applyParsedToForm(parsed) {
     if (parsed.currency && CURRENCIES[parsed.currency] && parsed.currency !== selectedEntryCurrency) selectEntryCurrency(parsed.currency);
     if (parsed.amount) document.getElementById('amountInput').value = String(parsed.amount).replace('.', ',');
     if (selectedType !== 'expense') setType('expense');
@@ -1340,6 +1510,47 @@
     const cat = EXPENSE_CATEGORIES.find(c => c.name === parsed.category) ? parsed.category : 'Другое';
     selectCategory(cat);
     updateSaveButtonState();
+  }
+  // ---------- Уточняющий вопрос (опрос), только если разрешено в настройках ----------
+  function openClarifySheet(parsed) {
+    const field = parsed.unclear_field;
+    const q = field === 'amount'
+      ? `ИИ не до конца уверен насчёт суммы. Похоже на <b>${parsed.amount} ${parsed.currency || ''}</b> — верно?`
+      : `ИИ не до конца уверен насчёт категории. Похоже на <b>«${escapeHtml(parsed.category || 'Другое')}»</b> — верно?`;
+    document.getElementById('clarifyQuestion').innerHTML = q;
+    openSheet('clarifySheet');
+  }
+  function clarifyAnswer(isCorrect) {
+    closeSheet('clarifySheet');
+    if (!pendingReceiptParsed) return;
+    if (isCorrect) {
+      applyParsedToForm(pendingReceiptParsed);
+      showToast('Спасибо, заполнено');
+    } else {
+      showToast('Хорошо, введите вручную — так ИИ учится точнее');
+      logCorrection(pendingReceiptParsed, null);
+    }
+    pendingReceiptParsed = null;
+  }
+  async function logCorrection(aiParsed, finalValues) {
+    if (!currentHousehold) return;
+    try {
+      await sb.from('receipt_corrections').insert({
+        household_id: currentHousehold.id,
+        ai_amount: aiParsed.amount, ai_store: aiParsed.store, ai_category: aiParsed.category,
+        final_amount: finalValues ? finalValues.amount : null,
+        final_category: finalValues ? finalValues.category : null,
+      });
+    } catch (e) { /* не критично */ }
+  }
+  function confirmReceipt(accept) {
+    document.getElementById('receiptConfirm').classList.add('hidden');
+    if (!accept || !pendingReceiptParsed) {
+      if (pendingReceiptParsed) logCorrection(pendingReceiptParsed, null);
+      pendingReceiptParsed = null;
+      return;
+    }
+    applyParsedToForm(pendingReceiptParsed);
     pendingReceiptParsed = null;
     showToast('Заполнено, проверьте перед сохранением');
   }
@@ -1364,7 +1575,7 @@
     const enteredTarget = parseFloat(document.getElementById('goalTargetInput').value);
     if (!name || !(enteredTarget > 0)) { showToast('Заполните название и сумму', { error: true }); return; }
     const target = convert(enteredTarget, displayCurrency, 'RUB');
-    const { data, error } = await sb.from('goals').insert({ user_id: currentUser.id, name, target, collected: 0 }).select().single();
+    const { data, error } = await sb.from('goals').insert({ user_id: currentUser.id, household_id: currentHousehold.id, name, target, collected: 0 }).select().single();
     if (error) { showToast('Не удалось создать цель: ' + error.message, { error: true }); return; }
     goals.push({ id: data.id, name: data.name, target: Number(data.target), collected: Number(data.collected), date: new Date(data.created_at).getTime() });
     closeSheet('goalSheet');
@@ -1412,7 +1623,7 @@
     const newCollected = g.collected + amountRUB;
     const [goalRes, txRes] = await Promise.all([
       sb.from('goals').update({ collected: newCollected }).eq('id', g.id),
-      sb.from('transactions').insert({ user_id: currentUser.id, type: 'expense', category: SAVING_CATEGORY.name, is_saving: true, amount: amountRUB, entry_amount: entered, entry_currency: displayCurrency, comment: `Пополнение цели «${g.name}»` }).select().single(),
+      sb.from('transactions').insert({ user_id: currentUser.id, household_id: currentHousehold.id, type: 'expense', category: SAVING_CATEGORY.name, is_saving: true, amount: amountRUB, entry_amount: entered, entry_currency: displayCurrency, comment: `Пополнение цели «${g.name}»` }).select().single(),
     ]);
     if (goalRes.error || txRes.error) { showToast('Не удалось пополнить цель', { error: true }); return; }
     g.collected = newCollected;
@@ -1461,6 +1672,7 @@
     enableDrag('settingsSheet', 'settingsHandle');
     enableDrag('premiumSheet', 'premiumHandle');
     enableDrag('adviceSheet', 'adviceHandle');
+    enableDrag('recurringSheet', 'recurringHandle');
     initSwipeDelete();
     initPullToRefresh();
 
