@@ -1009,13 +1009,14 @@
       </button>`;
     }).join('');
   }
-  function setDisplayCurrency(cur) {
+  async function setDisplayCurrency(cur) {
     if (cur === displayCurrency) return;
     displayCurrency = cur;
     localStorage.setItem('piggy_currency', cur);
     renderCurrencySelector();
     updateRatesUI();
     renderAll();
+    if (currentUser) await sb.from('profiles').update({ display_currency: cur }).eq('id', currentUser.id);
   }
 
   function renderBalance() {
@@ -1190,17 +1191,25 @@
     const content = document.getElementById('adviceContent');
     loading.classList.remove('hidden'); loading.classList.add('flex');
     content.innerHTML = '';
+    const now = new Date();
+    const thisMonthTx = transactions.filter(t => new Date(t.date).getMonth() === now.getMonth() && new Date(t.date).getFullYear() === now.getFullYear());
     const byCat = {};
-    transactions.filter(t => t.type === 'expense').forEach(t => {
+    thisMonthTx.filter(t => t.type === 'expense').forEach(t => {
       const key = t.isSaving ? 'Накопления' : t.category;
       byCat[key] = (byCat[key] || 0) + t.amount;
     });
-    const summary = Object.entries(byCat).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k}: ${Math.round(v)} ₽`).join(', ');
+    const monthSummary = Object.entries(byCat).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k}: ${Math.round(v)} ₽`).join(', ');
+    const topItems = thisMonthTx.filter(t => t.comment).slice(0, 8).map(t => t.comment).join('; ');
+    const spentThisMonth = thisMonthTx.filter(t => t.type === 'expense' && !t.isSaving).reduce((s, t) => s + t.amount, 0);
+    const budgetUsedPct = userMonthlyBudget ? Math.round((spentThisMonth / userMonthlyBudget) * 100) : null;
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const daysLeftInMonth = daysInMonth - now.getDate() + 1;
+    const goalsText = goals.map(g => `${g.name}: собрано ${Math.round(g.collected)} из ${Math.round(g.target)} ₽`).join('; ');
     try {
       const resp = await fetch('/api/ai-advice', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ summary, income: calcIncome(), expense: calcExpense(), salary: userSalary, budget: userMonthlyBudget }),
+        body: JSON.stringify({ monthSummary, topItems, income: calcIncome(), expense: calcExpense(), salary: userSalary, budget: userMonthlyBudget, budgetUsedPct, daysLeftInMonth, goals: goalsText }),
       });
       const data = await resp.json();
       loading.classList.add('hidden'); loading.classList.remove('flex');
