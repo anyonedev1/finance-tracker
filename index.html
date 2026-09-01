@@ -187,7 +187,7 @@
         </div>
 
         <button onclick="openAdviceSheet()" class="w-full relative overflow-hidden rounded-2xl p-4 mb-5 flex items-center gap-3 active:scale-[0.98] transition-transform" style="background:linear-gradient(120deg,#1c1c1e,#241c30)">
-          <div class="absolute -right-6 -top-8 w-28 h-28 rounded-full opacity-30 blur-2xl pointer-events-none" style="background:radial-gradient(circle,#BF5AF2,transparent 70%)"></div>
+          <div class="absolute -right-6 -top-8 w-28 h-28 rounded-full opacity-30 blur-2xl pointer-events-none animate-pulse" style="background:radial-gradient(circle,#BF5AF2,transparent 70%)"></div>
           <div class="relative w-11 h-11 rounded-full bg-[#BF5AF2]/15 flex items-center justify-center text-xl shrink-0">🧠</div>
           <div class="relative flex-1 text-left">
             <p class="font-semibold text-[15px]">ИИ-советник по экономии</p>
@@ -441,6 +441,16 @@
         </div>
         <p class="text-[11px] text-[#8E8E93] mb-5">Покажем прогресс-бар на главном экране</p>
 
+        <div class="flex items-center justify-between bg-white/5 rounded-xl px-4 py-3.5 mb-5">
+          <div class="pr-3">
+            <p class="text-sm font-medium">ИИ может уточнять</p>
+            <p class="text-[11px] text-[#8E8E93]">Если не уверен — задаст короткий вопрос вместо автозаполнения</p>
+          </div>
+          <button id="clarifyToggle" onclick="toggleAiClarify()" class="shrink-0 w-12 h-7 rounded-full relative transition-colors" style="background:#30D158">
+            <span id="clarifyToggleDot" class="absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full transition-transform" style="transform:translateX(20px)"></span>
+          </button>
+        </div>
+
         <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide mb-2">Семейный бюджет</p>
         <div class="bg-white/5 rounded-xl px-4 py-3.5 mb-2">
           <p class="text-[11px] text-[#8E8E93] mb-1">Код приглашения — дайте его члену семьи</p>
@@ -475,6 +485,21 @@
         </div>
         <button onclick="requestPremium()" class="w-full bg-[#FFD60A] text-black active:scale-[0.98] transition-all rounded-2xl py-4 font-semibold text-[17px] mb-3">Оформить Premium</button>
         <button onclick="closeSheet('premiumSheet')" class="w-full text-[#8E8E93] text-sm py-2">Не сейчас</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLARIFY SHEET (уточняющий вопрос от ИИ) -->
+  <div id="clarifySheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 ease-out">
+    <div class="max-w-md mx-auto bg-[#1c1c1e] rounded-t-3xl safe-bottom">
+      <div id="clarifyHandle" class="pt-3 pb-1 flex justify-center touch-none"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
+      <div class="px-5 pb-6 pt-3 text-center">
+        <p class="text-3xl mb-2">🤔</p>
+        <p id="clarifyQuestion" class="text-sm leading-relaxed mb-5"></p>
+        <div class="flex gap-2">
+          <button onclick="clarifyAnswer(true)" class="flex-1 bg-[#30D158] text-black rounded-xl py-3 font-semibold text-sm active:scale-95 transition-transform">Да, верно</button>
+          <button onclick="clarifyAnswer(false)" class="flex-1 bg-white/10 rounded-xl py-3 font-semibold text-sm active:scale-95 transition-transform">Нет, я сам</button>
+        </div>
       </div>
     </div>
   </div>
@@ -633,6 +658,7 @@
     userSalaryCurrency = profileRes.data ? profileRes.data.salary_currency || 'RUB' : 'RUB';
     userIsPremium = profileRes.data ? !!profileRes.data.is_premium : false;
     userMonthlyBudget = profileRes.data ? Number(profileRes.data.monthly_budget) || 0 : 0;
+    userAiClarifyEnabled = profileRes.data ? profileRes.data.ai_clarify_enabled !== false : true;
     if (profileRes.data && profileRes.data.display_currency) { displayCurrency = profileRes.data.display_currency; }
     updatePremiumBadge();
 
@@ -676,6 +702,7 @@
   let userSalaryCurrency = 'RUB';
   let userIsPremium = false;
   let userMonthlyBudget = 0;
+  let userAiClarifyEnabled = true;
   let recurringPayments = [];
 
   async function applyDueRecurringPayments() {
@@ -760,7 +787,17 @@
     document.getElementById('budgetCurrencySymbol').textContent = CURRENCIES[displayCurrency].symbol;
     document.getElementById('budgetInput').value = userMonthlyBudget ? String(convert(userMonthlyBudget, 'RUB', displayCurrency).toFixed(2)).replace('.00','') : '';
     document.getElementById('householdCode').textContent = currentHousehold ? currentHousehold.invite_code : '------';
+    setClarifyToggleUI();
     openSheet('settingsSheet');
+  }
+  function setClarifyToggleUI() {
+    document.getElementById('clarifyToggle').style.background = userAiClarifyEnabled ? '#30D158' : '#3A3A3C';
+    document.getElementById('clarifyToggleDot').style.transform = userAiClarifyEnabled ? 'translateX(20px)' : 'translateX(0)';
+  }
+  async function toggleAiClarify() {
+    userAiClarifyEnabled = !userAiClarifyEnabled;
+    setClarifyToggleUI();
+    await sb.from('profiles').update({ ai_clarify_enabled: userAiClarifyEnabled }).eq('id', currentUser.id);
   }
   function copyInviteCode() {
     if (!currentHousehold) return;
@@ -1008,7 +1045,7 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V7m2 0-.8 12.2A2 2 0 0 1 14.2 21H9.8a2 2 0 0 1-2-1.8L7 7"/></svg>
         </div>
         <div class="txn-fg relative flex items-center gap-3 bg-[#1c1c1e] rounded-2xl p-3.5" ${swipeAttr} style="transition:transform .25s ease">
-          <div class="w-11 h-11 rounded-full flex items-center justify-center text-xl shrink-0" style="background:${cat.color}22">${cat.icon}</div>
+          <div class="w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0 shadow-lg" style="background:linear-gradient(135deg,${cat.color}33,${cat.color}11);box-shadow:0 4px 14px ${cat.color}22">${cat.icon}</div>
           <div class="flex-1 min-w-0">
             <p class="font-medium truncate">${escapeHtml(cat.name)}</p>
             <p class="text-xs text-[#8E8E93] truncate">${t.comment ? escapeHtml(t.comment) + ' · ' : ''}${formatDate(t.date)}</p>
@@ -1673,6 +1710,7 @@
     enableDrag('premiumSheet', 'premiumHandle');
     enableDrag('adviceSheet', 'adviceHandle');
     enableDrag('recurringSheet', 'recurringHandle');
+    enableDrag('clarifySheet', 'clarifyHandle');
     initSwipeDelete();
     initPullToRefresh();
 
