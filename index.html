@@ -110,6 +110,64 @@
     </form>
   </div>
 
+  <!-- ONBOARDING (первичная настройка перед использованием) -->
+  <div id="onboardingScreen" class="fixed inset-0 z-[95] hidden flex-col bg-black">
+    <div class="absolute -top-24 -right-16 w-80 h-80 rounded-full bg-[#FFD60A]/10 blur-3xl pointer-events-none"></div>
+    <div class="safe-top px-6 pt-2 pb-4 flex items-center gap-2 shrink-0">
+      <div id="obDots" class="flex gap-1.5"></div>
+    </div>
+    <div class="flex-1 overflow-y-auto px-6 relative">
+
+      <!-- Step 1: currency -->
+      <div id="obStep1" class="ob-step">
+        <p class="text-4xl mb-3">💱</p>
+        <h2 class="text-2xl font-bold mb-1.5">Выберите вашу валюту</h2>
+        <p class="text-sm text-[#8E8E93] mb-6">Все суммы будут отображаться в ней. Поменять можно в любой момент в профиле.</p>
+        <div id="obCurrencyGrid" class="grid grid-cols-2 gap-3"></div>
+      </div>
+
+      <!-- Step 2: salary & budget -->
+      <div id="obStep2" class="ob-step hidden">
+        <p class="text-4xl mb-3">💼</p>
+        <h2 class="text-2xl font-bold mb-1.5">Зарплата и бюджет</h2>
+        <p class="text-sm text-[#8E8E93] mb-6">Необязательно — но так копилка сможет считать, сколько можно тратить в день. Можно пропустить и заполнить позже.</p>
+        <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide mb-2">Зарплата в месяц</p>
+        <div class="flex items-center gap-2 bg-white/5 rounded-2xl px-4 py-4 mb-4 focus-within:ring-2 focus-within:ring-[#0A84FF]/40">
+          <input id="obSalaryInput" type="text" inputmode="decimal" placeholder="0" class="flex-1 bg-transparent text-lg outline-none">
+          <span id="obSalarySymbol" class="text-[#8E8E93] text-sm">₽</span>
+        </div>
+        <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide mb-2">Бюджет на расходы в месяц</p>
+        <div class="flex items-center gap-2 bg-white/5 rounded-2xl px-4 py-4 mb-2 focus-within:ring-2 focus-within:ring-[#0A84FF]/40">
+          <input id="obBudgetInput" type="text" inputmode="decimal" placeholder="0 — без лимита" class="flex-1 bg-transparent text-lg outline-none">
+          <span id="obBudgetSymbol" class="text-[#8E8E93] text-sm">₽</span>
+        </div>
+      </div>
+
+      <!-- Step 3: done -->
+      <div id="obStep3" class="ob-step hidden text-center pt-6">
+        <p class="text-5xl mb-3">🎉</p>
+        <h2 class="text-2xl font-bold mb-1.5">Готово!</h2>
+        <p class="text-sm text-[#8E8E93] mb-6 px-2">Копилка настроена. Валюту, зарплату и бюджет всегда можно изменить во вкладке «Профиль».</p>
+        <div class="bg-white/5 rounded-2xl p-4 text-left space-y-2">
+          <p class="text-sm flex items-center gap-2"><span class="text-[#30D158]">✓</span> Учёт доходов и расходов по категориям</p>
+          <p class="text-sm flex items-center gap-2"><span class="text-[#30D158]">✓</span> Цели накоплений с прогрессом</p>
+          <p class="text-sm flex items-center gap-2"><span class="text-[#30D158]">✓</span> Сканер чеков и ИИ-советник</p>
+          <p class="text-sm flex items-center gap-2"><span class="text-[#30D158]">✓</span> Общий семейный бюджет по коду</p>
+        </div>
+      </div>
+    </div>
+    <!-- нижняя панель — специально пониже, чтобы было легко нажимать большим пальцем -->
+    <div class="safe-bottom px-6 pt-3 shrink-0 bg-black/80 backdrop-blur-xl border-t border-white/5">
+      <div class="flex gap-3">
+        <button id="obBackBtn" onclick="obPrevStep()" class="hidden w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center active:scale-95 transition-transform shrink-0">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+        </button>
+        <button id="obNextBtn" onclick="obNextStep()" class="flex-1 h-14 rounded-2xl bg-[#0A84FF] active:scale-[0.98] transition-all font-semibold text-[17px]">Далее</button>
+      </div>
+      <button id="obSkipBtn" onclick="obSkipStep()" class="hidden w-full text-center text-sm text-[#8E8E93] py-4">Пропустить этот шаг</button>
+    </div>
+  </div>
+
   <div id="app" class="max-w-md mx-auto min-h-screen flex-col relative z-10 hidden">
     <header class="safe-top px-5 pt-3 pb-1 flex items-start justify-between gap-3">
       <div>
@@ -117,9 +175,6 @@
         <p class="text-sm text-[#8E8E93] -mt-0.5">Умный трекер расходов</p>
       </div>
       <div class="flex gap-2 shrink-0">
-        <button id="settingsBtn" onclick="openSettingsSheet()" class="w-9 h-9 mt-1 rounded-full bg-white/5 flex items-center justify-center active:scale-90 transition-transform">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        </button>
         <button id="changelogBtn" onclick="openChangelog()" class="relative w-9 h-9 mt-1 rounded-full bg-white/5 flex items-center justify-center active:scale-90 transition-transform">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
           <span id="changelogDot" class="hidden absolute top-1 right-1 w-2 h-2 rounded-full bg-[#FF453A]"></span>
@@ -261,26 +316,87 @@
         </button>
       </section>
 
+      <!-- PROFILE TAB -->
+      <section id="tabProfile" class="hidden">
+        <div class="rounded-3xl p-5 mb-5 relative overflow-hidden flex items-center gap-4" style="background:linear-gradient(135deg,#1c1c1e,#232325)">
+          <div id="profileAvatar" class="w-16 h-16 rounded-full bg-[#0A84FF] flex items-center justify-center text-2xl font-bold shrink-0">?</div>
+          <div class="min-w-0">
+            <p id="profileEmail" class="font-semibold text-[16px] truncate">—</p>
+            <p id="profileSince" class="text-xs text-[#8E8E93] mt-0.5">—</p>
+            <p id="profilePremiumBadge" class="hidden text-[11px] font-semibold text-[#FFD60A] mt-1">👑 Premium</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2.5 mb-5">
+          <div class="bg-[#1c1c1e] rounded-2xl p-3 text-center">
+            <p id="profileStatSaved" class="text-[15px] font-bold truncate">0</p>
+            <p class="text-[10px] text-[#8E8E93] mt-0.5">Накоплено</p>
+          </div>
+          <div class="bg-[#1c1c1e] rounded-2xl p-3 text-center">
+            <p id="profileStatGoals" class="text-[15px] font-bold truncate">0</p>
+            <p class="text-[10px] text-[#8E8E93] mt-0.5">Целей готово</p>
+          </div>
+          <div class="bg-[#1c1c1e] rounded-2xl p-3 text-center">
+            <p id="profileStatTx" class="text-[15px] font-bold truncate">0</p>
+            <p class="text-[10px] text-[#8E8E93] mt-0.5">Операций</p>
+          </div>
+        </div>
+
+        <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide mb-2">Валюта отображения</p>
+        <div id="profileCurrencySelector" class="grid grid-cols-4 gap-2 mb-5"></div>
+
+        <!-- крупные, легко нажимаемые пункты меню -->
+        <div class="flex flex-col gap-2.5 mb-5">
+          <button onclick="openSettingsSheet()" class="w-full flex items-center gap-3 bg-[#1c1c1e] rounded-2xl px-4 py-4 active:scale-[0.98] transition-transform">
+            <span class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-lg shrink-0">⚙️</span>
+            <span class="flex-1 text-left font-medium text-[15px]">Настройки</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
+          <button onclick="openRecurringSheet()" class="w-full flex items-center gap-3 bg-[#1c1c1e] rounded-2xl px-4 py-4 active:scale-[0.98] transition-transform">
+            <span class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-lg shrink-0">🔁</span>
+            <span class="flex-1 text-left font-medium text-[15px]">Регулярные платежи</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
+          <button onclick="openPremiumSheet()" class="w-full flex items-center gap-3 bg-[#1c1c1e] rounded-2xl px-4 py-4 active:scale-[0.98] transition-transform">
+            <span class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-lg shrink-0">👑</span>
+            <span class="flex-1 text-left font-medium text-[15px]">Копилка Premium</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
+          <button onclick="openChangelog()" class="w-full flex items-center gap-3 bg-[#1c1c1e] rounded-2xl px-4 py-4 active:scale-[0.98] transition-transform">
+            <span class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-lg shrink-0">📋</span>
+            <span class="flex-1 text-left font-medium text-[15px]">Что нового</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
+        </div>
+
+        <!-- кнопка выхода — намеренно внизу экрана, чтобы легко было нажать одной рукой -->
+        <button onclick="handleLogout()" class="w-full bg-white/5 text-[#FF453A] active:scale-[0.98] transition-all rounded-2xl py-4 font-semibold text-[15px] mb-4">Выйти из аккаунта</button>
+      </section>
+
     </main>
 
     <!-- FAB -->
     <button id="fabButton" class="fixed right-5 bottom-24 w-14 h-14 rounded-full bg-[#0A84FF] shadow-lg shadow-blue-500/30 flex items-center justify-center text-3xl font-light active:scale-90 transition-transform z-30">＋</button>
 
-    <!-- BOTTOM NAV -->
+    <!-- BOTTOM NAV — кнопки крупные, растянуты во всю ширину, легко нажимать большим пальцем -->
     <nav class="fixed bottom-0 inset-x-0 z-20">
       <div class="max-w-md mx-auto bg-[#1c1c1e]/85 backdrop-blur-xl border-t border-white/10 flex relative safe-bottom">
-        <div id="navIndicator" class="absolute top-1.5 left-0 h-[3px] w-1/3 rounded-full bg-[#0A84FF] transition-transform duration-300 ease-out" style="transform:translateX(0%)"></div>
-        <button class="nav-btn flex-1 flex flex-col items-center py-2.5 gap-1 text-[#0A84FF] active:opacity-60 transition-opacity" data-tab="home" onclick="switchTab('home')">
+        <div id="navIndicator" class="absolute top-1.5 left-0 h-[3px] w-1/4 rounded-full bg-[#0A84FF] transition-transform duration-300 ease-out" style="transform:translateX(0%)"></div>
+        <button class="nav-btn flex-1 flex flex-col items-center py-3 gap-1 text-[#0A84FF] active:opacity-60 transition-opacity" data-tab="home" onclick="switchTab('home')">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1H9a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1h2.5a1 1 0 0 0 1-1v-9"/></svg>
           <span class="text-[10px] font-medium">Главная</span>
         </button>
-        <button class="nav-btn flex-1 flex flex-col items-center py-2.5 gap-1 text-[#8E8E93] active:opacity-60 transition-opacity" data-tab="goals" onclick="switchTab('goals')">
+        <button class="nav-btn flex-1 flex flex-col items-center py-3 gap-1 text-[#8E8E93] active:opacity-60 transition-opacity" data-tab="goals" onclick="switchTab('goals')">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.3"/><circle cx="12" cy="12" r="4.8"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>
           <span class="text-[10px] font-medium">Цели</span>
         </button>
-        <button class="nav-btn flex-1 flex flex-col items-center py-2.5 gap-1 text-[#8E8E93] active:opacity-60 transition-opacity" data-tab="analytics" onclick="switchTab('analytics')">
+        <button class="nav-btn flex-1 flex flex-col items-center py-3 gap-1 text-[#8E8E93] active:opacity-60 transition-opacity" data-tab="analytics" onclick="switchTab('analytics')">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>
           <span class="text-[10px] font-medium">Аналитика</span>
+        </button>
+        <button class="nav-btn flex-1 flex flex-col items-center py-3 gap-1 text-[#8E8E93] active:opacity-60 transition-opacity" data-tab="profile" onclick="switchTab('profile')">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.4-3.6 4.4-5.5 7.5-5.5s6.1 1.9 7.5 5.5"/></svg>
+          <span class="text-[10px] font-medium">Профиль</span>
         </button>
       </div>
     </nav>
@@ -651,9 +767,19 @@
   }
 
   let currentHousehold = null; // { id, name, invite_code, owner_id }
+  let userProfile = null;
+  function genInviteCode() {
+    const chars = 'abcdefghijkmnpqrstuvwxyz23456789';
+    let out = '';
+    for (let i = 0; i < 6; i++) out += chars[Math.floor(Math.random() * chars.length)];
+    return out;
+  }
+  // Возвращает true, если для пользователя только что была создана новая семья
+  // (то есть это действительно новый аккаунт и нужно показать онбординг).
   async function loadUserData(userId) {
     const profileRes = await sb.from('profiles').select('*').eq('id', userId).single();
-    const hhId = profileRes.data ? profileRes.data.household_id : null;
+    userProfile = profileRes.data || null;
+    let hhId = profileRes.data ? profileRes.data.household_id : null;
     userSalary = profileRes.data ? Number(profileRes.data.salary) || 0 : 0;
     userSalaryCurrency = profileRes.data ? profileRes.data.salary_currency || 'RUB' : 'RUB';
     userIsPremium = profileRes.data ? !!profileRes.data.is_premium : false;
@@ -662,7 +788,21 @@
     if (profileRes.data && profileRes.data.display_currency) { displayCurrency = profileRes.data.display_currency; }
     updatePremiumBadge();
 
-    if (!hhId) { transactions = []; goals = []; recurringPayments = []; return; }
+    let isNewHousehold = false;
+    if (!hhId) {
+      // БАГФИКС: раньше у новых пользователей не было семьи вообще,
+      // и добавить операцию/цель было невозможно. Теперь создаём её автоматически.
+      try {
+        const { data: newHh, error: hhCreateErr } = await sb.from('households')
+          .insert({ owner_id: userId, invite_code: genInviteCode() }).select().single();
+        if (newHh && !hhCreateErr) {
+          hhId = newHh.id;
+          isNewHousehold = true;
+          await sb.from('profiles').update({ household_id: hhId }).eq('id', userId);
+        }
+      } catch (e) { /* созданная семья не критична для чтения профиля */ }
+    }
+    if (!hhId) { transactions = []; goals = []; recurringPayments = []; currentHousehold = null; return isNewHousehold; }
 
     const [txRes, goalsRes, hhRes, recRes] = await Promise.all([
       sb.from('transactions').select('*').eq('household_id', hhId).order('created_at', { ascending: false }),
@@ -675,27 +815,40 @@
     currentHousehold = hhRes.data || null;
     recurringPayments = recRes.data || [];
     await applyDueRecurringPayments();
+    return isNewHousehold;
   }
 
   sb.auth.onAuthStateChange(async (event, session) => {
     if (session && session.user) {
       currentUser = session.user;
       document.getElementById('authScreen').classList.add('hidden');
-      const app = document.getElementById('app');
-      app.classList.remove('hidden'); app.classList.add('flex');
-      await loadUserData(currentUser.id);
+      const isNewHousehold = await loadUserData(currentUser.id);
       renderCurrencySelector();
       setType('expense');
-      switchTab('home');
       updateRatesUI();
       renderAll();
+
+      const onboardedFlag = 'piggy_onboarded_' + currentUser.id;
+      const needsOnboarding = isNewHousehold || !localStorage.getItem(onboardedFlag);
+      if (needsOnboarding) {
+        openOnboarding();
+      } else {
+        showApp();
+        switchTab('home');
+      }
     } else {
       currentUser = null;
       document.getElementById('authScreen').classList.remove('hidden');
+      document.getElementById('onboardingScreen').classList.add('hidden');
       const app = document.getElementById('app');
       app.classList.add('hidden'); app.classList.remove('flex');
     }
   });
+  function showApp() {
+    document.getElementById('onboardingScreen').classList.add('hidden');
+    const app = document.getElementById('app');
+    app.classList.remove('hidden'); app.classList.add('flex');
+  }
 
   // ---------- Settings (salary) ----------
   let userSalary = 0;
