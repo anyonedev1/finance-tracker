@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Копилка — Трекер расходов</title>
-<meta name="description" content="Умная копилка и трекер расходов с целями накоплений, мультивалютностью и сканером чеков">
+<title>Копилка — Семейный трекер расходов</title>
+<meta name="description" content="Умная семейная копилка и трекер расходов с общим бюджетом, целями накоплений, мультивалютностью и сканером чеков">
 
 <!-- iOS PWA meta tags -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -87,7 +87,7 @@
     <form id="authForm" class="relative w-full max-w-sm bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-3xl px-6 py-8 shadow-2xl" onsubmit="return handleAuthSubmit(event)">
       <p class="text-5xl text-center mb-2 float-slow">🐷</p>
       <h1 class="text-2xl font-bold text-center mb-1">Копилка</h1>
-      <p class="text-center text-xs text-[#8E8E93] mb-6">Твои финансы под контролем</p>
+      <p class="text-center text-xs text-[#8E8E93] mb-6">Семейные финансы под контролем</p>
 
       <button type="button" onclick="handleGoogleLogin()" class="w-full flex items-center justify-center gap-2.5 bg-white text-black rounded-2xl py-3.5 font-semibold text-[15px] active:scale-[0.98] transition-all mb-4">
         <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.9 32.6 29.4 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.4 6.1 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.9 19 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.4 6.1 29.5 4 24 4c-7.7 0-14.3 4.4-17.7 10.7z"/><path fill="#4CAF50" d="M24 44c5.3 0 10.1-2 13.7-5.4l-6.3-5.3C29.4 35.1 26.8 36 24 36c-5.3 0-9.8-3.4-11.4-8.1l-6.5 5C9.6 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.6l6.3 5.3C40.9 36 44 30.8 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>
@@ -110,7 +110,7 @@
     </form>
   </div>
 
-  <!-- ONBOARDING (первичная настройка перед использованием) -->
+  <!-- ONBOARDING -->
   <div id="onboardingScreen" class="fixed inset-0 z-[95] hidden flex-col bg-black">
     <div class="absolute -top-24 -right-16 w-80 h-80 rounded-full bg-[#FFD60A]/10 blur-3xl pointer-events-none"></div>
     <div class="safe-top px-6 pt-2 pb-4 flex items-center gap-2 shrink-0">
@@ -143,20 +143,32 @@
         </div>
       </div>
 
-      <!-- Step 3: done -->
-      <div id="obStep3" class="ob-step hidden text-center pt-6">
+      <!-- Step 3: family join / setup -->
+      <div id="obStep3" class="ob-step hidden">
+        <p class="text-4xl mb-3">👨‍👩‍👧‍👦</p>
+        <h2 class="text-2xl font-bold mb-1.5">Семейный доступ</h2>
+        <p class="text-sm text-[#8E8E93] mb-5">Вас пригласили в семейный бюджет? Введите 6-значный код. Или продолжите со своей личной копилкой.</p>
+        <div class="bg-white/5 rounded-2xl p-4 mb-4">
+          <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide mb-2">Код приглашения</p>
+          <input id="obJoinCodeInput" type="text" maxlength="8" placeholder="Например: A3K9F2" class="w-full bg-white/10 rounded-xl px-4 py-3.5 text-center font-mono text-lg tracking-widest uppercase outline-none focus:ring-2 focus:ring-[#0A84FF]">
+        </div>
+        <p class="text-xs text-[#8E8E93] leading-relaxed text-center">Вы сможете пригласить близких в свой бюджет или подключиться к другому в любой момент в Профиле.</p>
+      </div>
+
+      <!-- Step 4: done -->
+      <div id="obStep4" class="ob-step hidden text-center pt-6">
         <p class="text-5xl mb-3">🎉</p>
-        <h2 class="text-2xl font-bold mb-1.5">Готово!</h2>
-        <p class="text-sm text-[#8E8E93] mb-6 px-2">Копилка настроена. Валюту, зарплату и бюджет всегда можно изменить во вкладке «Профиль».</p>
+        <h2 class="text-2xl font-bold mb-1.5">Всё готово!</h2>
+        <p class="text-sm text-[#8E8E93] mb-6 px-2">Ваша Копилка настроена. Вся информация синхронизируется в реальном времени.</p>
         <div class="bg-white/5 rounded-2xl p-4 text-left space-y-2">
-          <p class="text-sm flex items-center gap-2"><span class="text-[#30D158]">✓</span> Учёт доходов и расходов по категориям</p>
-          <p class="text-sm flex items-center gap-2"><span class="text-[#30D158]">✓</span> Цели накоплений с прогрессом</p>
+          <p class="text-sm flex items-center gap-2"><span class="text-[#30D158]">✓</span> Общий семейный баланс и расходы</p>
+          <p class="text-sm flex items-center gap-2"><span class="text-[#30D158]">✓</span> Цели накоплений с совместным пополнением</p>
+          <p class="text-sm flex items-center gap-2"><span class="text-[#30D158]">✓</span> Мгновенное обновление на всех телефонах</p>
           <p class="text-sm flex items-center gap-2"><span class="text-[#30D158]">✓</span> Сканер чеков и ИИ-советник</p>
-          <p class="text-sm flex items-center gap-2"><span class="text-[#30D158]">✓</span> Общий семейный бюджет по коду</p>
         </div>
       </div>
     </div>
-    <!-- нижняя панель — специально пониже, чтобы было легко нажимать большим пальцем -->
+    
     <div class="safe-bottom px-6 pt-3 shrink-0 bg-black/80 backdrop-blur-xl border-t border-white/5">
       <div class="flex gap-3">
         <button id="obBackBtn" onclick="obPrevStep()" class="hidden w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center active:scale-95 transition-transform shrink-0">
@@ -171,8 +183,11 @@
   <div id="app" class="max-w-md mx-auto min-h-screen flex-col relative z-10 hidden">
     <header class="safe-top px-5 pt-3 pb-1 flex items-start justify-between gap-3">
       <div>
-        <h1 class="text-[28px] font-bold tracking-tight">🐷 Копилка</h1>
-        <p class="text-sm text-[#8E8E93] -mt-0.5">Умный трекер расходов</p>
+        <div class="flex items-center gap-2">
+          <h1 class="text-[28px] font-bold tracking-tight">🐷 Копилка</h1>
+          <span id="headerFamilyBadge" class="hidden text-[11px] font-semibold bg-[#0A84FF]/20 text-[#0A84FF] px-2 py-0.5 rounded-full">Семья</span>
+        </div>
+        <p id="headerHouseholdSubtitle" class="text-sm text-[#8E8E93] -mt-0.5">Умный семейный трекер</p>
       </div>
       <div class="flex gap-2 shrink-0">
         <button id="changelogBtn" onclick="openChangelog()" class="relative w-9 h-9 mt-1 rounded-full bg-white/5 flex items-center justify-center active:scale-90 transition-transform">
@@ -192,8 +207,11 @@
 
         <div class="rounded-3xl p-5 mb-4 relative overflow-hidden" style="background:linear-gradient(135deg,#1c1c1e,#232325)">
           <div class="absolute -right-10 -top-14 w-44 h-44 rounded-full opacity-25 blur-2xl pointer-events-none" style="background:radial-gradient(circle,#FFD60A,transparent 70%)"></div>
-        <div class="relative float-slow">
-            <p class="text-[#8E8E93] text-sm font-medium mb-1">Текущий баланс</p>
+          <div class="relative float-slow">
+            <div class="flex items-center justify-between mb-1">
+              <p class="text-[#8E8E93] text-sm font-medium">Общий баланс</p>
+              <span id="homeMemberAvatars" class="flex -space-x-1.5"></span>
+            </div>
             <p id="balanceAmount" class="text-[36px] font-bold tracking-tight mb-4 shimmer-text">0 ₽</p>
             <div class="flex gap-3">
               <div class="flex-1 bg-white/5 rounded-2xl px-3.5 py-3">
@@ -251,8 +269,17 @@
           <svg class="relative shrink-0" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
         </button>
 
-        <h2 class="text-lg font-bold mb-3">Последние операции</h2>
-        <p class="text-[11px] text-[#8E8E93] -mt-2 mb-3">Свайп влево — удалить</p>
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <h2 class="text-lg font-bold">Последние операции</h2>
+            <p class="text-[11px] text-[#8E8E93]">Свайп влево — удалить</p>
+          </div>
+          <div id="txUserFilter" class="hidden flex bg-white/5 rounded-xl p-0.5">
+            <button onclick="setTxFilter('all')" id="txFilterAll" class="px-2.5 py-1 text-xs rounded-lg font-semibold bg-[#0A84FF] text-white transition-colors">Все</button>
+            <button onclick="setTxFilter('mine')" id="txFilterMine" class="px-2.5 py-1 text-xs rounded-lg font-semibold text-[#8E8E93] transition-colors">Мои</button>
+          </div>
+        </div>
+
         <div id="transactionsList" class="flex flex-col gap-2.5"></div>
         <div id="transactionsEmpty" class="text-center py-14 text-[#8E8E93]">
           <p class="text-4xl mb-2">🧾</p>
@@ -270,20 +297,20 @@
           </svg>
           <div class="min-w-0">
             <p id="goalsRingLabel" class="text-2xl font-bold">0%</p>
-            <p class="text-xs text-[#8E8E93]">Общий прогресс по целям</p>
+            <p class="text-xs text-[#8E8E93]">Общий прогресс по семейным целям</p>
             <p id="goalsRingSub" class="text-xs text-[#8E8E93] mt-0.5"></p>
           </div>
         </div>
 
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-bold">Ваши цели</h2>
+          <h2 class="text-lg font-bold">Семейные цели</h2>
           <button onclick="openGoalSheet()" class="text-sm font-semibold text-[#FFD60A] bg-[#FFD60A]/10 px-3.5 py-1.5 rounded-full active:scale-95 transition-transform">+ Добавить</button>
         </div>
         <div id="goalsList" class="flex flex-col gap-3"></div>
         <div id="goalsEmpty" class="text-center py-14 text-[#8E8E93]">
           <p class="text-4xl mb-2">🎯</p>
           <p class="font-medium text-white/80">Пока нет целей</p>
-          <p class="text-sm mt-1">Создайте первую цель для накоплений</p>
+          <p class="text-sm mt-1">Создайте цель для совместных накоплений</p>
         </div>
       </section>
 
@@ -320,7 +347,7 @@
       <section id="tabProfile" class="hidden">
         <div class="rounded-3xl p-5 mb-5 relative overflow-hidden flex items-center gap-4" style="background:linear-gradient(135deg,#1c1c1e,#232325)">
           <div id="profileAvatar" class="w-16 h-16 rounded-full bg-[#0A84FF] flex items-center justify-center text-2xl font-bold shrink-0">?</div>
-          <div class="min-w-0">
+          <div class="min-w-0 flex-1">
             <p id="profileEmail" class="font-semibold text-[16px] truncate">—</p>
             <p id="profileSince" class="text-xs text-[#8E8E93] mt-0.5">—</p>
             <p id="profilePremiumBadge" class="hidden text-[11px] font-semibold text-[#FFD60A] mt-1">👑 Premium</p>
@@ -342,35 +369,54 @@
           </div>
         </div>
 
+        <!-- СЕМЕЙНЫЙ ДОСТУП -->
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-2">
+            <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide">Семейный доступ</p>
+            <span class="w-2 h-2 rounded-full bg-[#30D158] animate-pulse" title="Синхронизация в реальном времени"></span>
+          </div>
+          <span id="familyMemberCount" class="text-[11px] text-[#8E8E93]"></span>
+        </div>
+        <div class="bg-[#1c1c1e] rounded-2xl p-4 mb-5 space-y-3.5">
+          <div class="flex items-center justify-between">
+            <input id="profileHouseholdNameInput" type="text" placeholder="Название семьи" class="bg-transparent font-semibold text-[15px] outline-none text-white focus:ring-1 focus:ring-[#0A84FF] rounded px-1.5 py-0.5 -mx-1.5">
+            <button onclick="saveHouseholdName()" class="text-xs text-[#0A84FF] font-semibold">Сохранить</button>
+          </div>
+
+          <div id="familyMembersList" class="flex flex-col gap-2.5 pt-1"></div>
+
+          <!-- Блок кода приглашения и шаринга -->
+          <div class="bg-white/5 rounded-xl p-3.5">
+            <p class="text-[11px] text-[#8E8E93] mb-1.5">Код вашей семьи для подключения близких:</p>
+            <div class="flex items-center gap-2 mb-2.5">
+              <p id="profileHouseholdCode" class="flex-1 font-mono text-xl font-bold tracking-widest text-[#FFD60A]">------</p>
+              <button onclick="copyInviteCode()" class="bg-white/10 active:scale-95 transition-transform text-xs font-semibold px-3 py-2 rounded-lg">Копировать</button>
+            </div>
+            <button onclick="shareInviteCode()" class="w-full flex items-center justify-center gap-2 bg-[#0A84FF] text-white rounded-xl py-2.5 text-xs font-semibold active:scale-[0.98] transition-transform">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+              Отправить приглашение
+            </button>
+          </div>
+
+          <!-- Присоединение по коду -->
+          <div class="pt-1">
+            <p class="text-[11px] text-[#8E8E93] mb-1.5">Присоединиться к другой семье по коду:</p>
+            <div class="flex gap-2">
+              <input id="profileJoinCodeInput" type="text" maxlength="8" placeholder="Код от родственника" class="flex-1 bg-white/5 rounded-xl px-4 py-3 outline-none text-sm uppercase font-mono tracking-wider">
+              <button onclick="joinHousehold('profileJoinCodeInput')" class="bg-white/10 active:scale-95 transition-transform rounded-xl px-4 text-sm font-semibold shrink-0">Войти</button>
+            </div>
+          </div>
+
+          <button id="leaveHouseholdBtn" onclick="leaveHousehold()" class="hidden w-full text-center text-sm text-[#FF453A] pt-2 active:opacity-70 transition-opacity">Покинуть эту семью</button>
+        </div>
+
         <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide mb-2">Валюта отображения</p>
         <div id="profileCurrencySelector" class="grid grid-cols-4 gap-2 mb-5"></div>
 
-        <!-- СЕМЕЙНЫЙ ДОСТУП -->
-        <div class="flex items-center justify-between mb-2">
-          <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide">Семейный доступ</p>
-          <span id="familyMemberCount" class="text-[11px] text-[#8E8E93]"></span>
-        </div>
-        <div class="bg-[#1c1c1e] rounded-2xl p-4 mb-5">
-          <div id="familyMembersList" class="flex flex-col gap-2 mb-3"></div>
-          <div class="bg-white/5 rounded-xl px-4 py-3 mb-2">
-            <p class="text-[11px] text-[#8E8E93] mb-1">Код приглашения — дайте его члену семьи</p>
-            <div class="flex items-center gap-2">
-              <p id="profileHouseholdCode" class="flex-1 font-mono text-lg tracking-widest">------</p>
-              <button onclick="copyInviteCode()" class="text-[#0A84FF] text-sm font-semibold shrink-0">Копировать</button>
-            </div>
-          </div>
-          <div class="flex gap-2 mb-2">
-            <input id="profileJoinCodeInput" type="text" placeholder="Код от родственника" class="flex-1 bg-white/5 rounded-xl px-4 py-3 outline-none text-sm uppercase">
-            <button onclick="joinHousehold('profileJoinCodeInput')" class="bg-white/10 rounded-xl px-4 text-sm font-semibold shrink-0">Войти</button>
-          </div>
-          <button id="leaveHouseholdBtn" onclick="leaveHousehold()" class="hidden w-full text-center text-sm text-[#FF453A] py-2.5">Покинуть эту семью</button>
-        </div>
-
-        <!-- крупные, легко нажимаемые пункты меню -->
         <div class="flex flex-col gap-2.5 mb-5">
           <button onclick="openSettingsSheet()" class="w-full flex items-center gap-3 bg-[#1c1c1e] rounded-2xl px-4 py-4 active:scale-[0.98] transition-transform">
             <span class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-lg shrink-0">⚙️</span>
-            <span class="flex-1 text-left font-medium text-[15px]">Настройки</span>
+            <span class="flex-1 text-left font-medium text-[15px]">Настройки и зарплата</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
           </button>
           <button onclick="openRecurringSheet()" class="w-full flex items-center gap-3 bg-[#1c1c1e] rounded-2xl px-4 py-4 active:scale-[0.98] transition-transform">
@@ -390,7 +436,6 @@
           </button>
         </div>
 
-        <!-- кнопка выхода — намеренно внизу экрана, чтобы легко было нажать одной рукой -->
         <button onclick="handleLogout()" class="w-full bg-white/5 text-[#FF453A] active:scale-[0.98] transition-all rounded-2xl py-4 font-semibold text-[15px] mb-4">Выйти из аккаунта</button>
       </section>
 
@@ -399,7 +444,7 @@
     <!-- FAB -->
     <button id="fabButton" class="fixed right-5 bottom-24 w-14 h-14 rounded-full bg-[#0A84FF] shadow-lg shadow-blue-500/30 flex items-center justify-center text-3xl font-light active:scale-90 transition-transform z-30">＋</button>
 
-    <!-- BOTTOM NAV — кнопки крупные, растянуты во всю ширину, легко нажимать большим пальцем -->
+    <!-- BOTTOM NAV -->
     <nav class="fixed bottom-0 inset-x-0 z-20">
       <div class="max-w-md mx-auto bg-[#1c1c1e]/85 backdrop-blur-xl border-t border-white/10 flex relative safe-bottom">
         <div id="navIndicator" class="absolute top-1.5 left-0 h-[3px] w-1/4 rounded-full bg-[#0A84FF] transition-transform duration-300 ease-out" style="transform:translateX(0%)"></div>
@@ -440,7 +485,7 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1-2h7l1 2h2A1.5 1.5 0 0 1 20 8.5v10A1.5 1.5 0 0 1 18.5 20h-13A1.5 1.5 0 0 1 4 18.5v-10Z"/><circle cx="12" cy="13" r="3.4"/></svg>
           Сканировать чек
         </button>
-        <p class="text-[11px] text-[#8E8E93] text-center mb-1">Камера или галерея, распознаётся прямо на телефоне. Бета — проверяйте сумму.</p>
+        <p class="text-[11px] text-[#8E8E93] text-center mb-1">Камера или галерея, распознаётся прямо на телефоне.</p>
         <input id="receiptInput" type="file" accept="image/*" capture="environment" class="hidden">
         <div id="receiptStatus" class="hidden flex-col items-center gap-2 text-xs text-[#8E8E93] mb-2 mt-2">
           <div class="flex items-center gap-2">
@@ -489,7 +534,7 @@
           <button onclick="closeSheet('goalSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#8E8E93] active:scale-90 transition-transform">✕</button>
         </div>
         <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide mb-2">Название</p>
-        <input id="goalNameInput" type="text" maxlength="40" placeholder="Например, Отпуск в Сочи" class="w-full bg-white/5 rounded-xl px-4 py-3.5 text-[15px] outline-none mb-5 focus:ring-2 focus:ring-[#FFD60A]/40">
+        <input id="goalNameInput" type="text" maxlength="40" placeholder="Например, Семейный отпуск" class="w-full bg-white/5 rounded-xl px-4 py-3.5 text-[15px] outline-none mb-5 focus:ring-2 focus:ring-[#FFD60A]/40">
         <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide mb-2">Целевая сумма</p>
         <div class="flex items-center gap-2 bg-white/5 rounded-xl px-4 py-3.5 mb-6 focus-within:ring-2 focus-within:ring-[#FFD60A]/40">
           <input id="goalTargetInput" type="text" inputmode="decimal" placeholder="0" class="flex-1 bg-transparent text-[15px] outline-none">
@@ -569,39 +614,26 @@
           <input id="salaryInput" type="text" inputmode="decimal" placeholder="0" class="flex-1 bg-transparent text-[15px] outline-none">
           <span id="salaryCurrencySymbol" class="text-[#8E8E93] text-sm">₽</span>
         </div>
-        <p class="text-[11px] text-[#8E8E93] mb-5">Используется для будущей аналитики бюджета</p>
+        <p class="text-[11px] text-[#8E8E93] mb-5">Используется для расчёта аналитики бюджета</p>
 
-        <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide mb-2">Бюджет на месяц (расходы)</p>
+        <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide mb-2">Общий бюджет на месяц (расходы)</p>
         <div class="flex items-center gap-2 bg-white/5 rounded-xl px-4 py-3.5 mb-2 focus-within:ring-2 focus-within:ring-[#0A84FF]/40">
           <input id="budgetInput" type="text" inputmode="decimal" placeholder="0 — без лимита" class="flex-1 bg-transparent text-[15px] outline-none">
           <span id="budgetCurrencySymbol" class="text-[#8E8E93] text-sm">₽</span>
         </div>
-        <p class="text-[11px] text-[#8E8E93] mb-5">Покажем прогресс-бар на главном экране</p>
+        <p class="text-[11px] text-[#8E8E93] mb-5">Показывает лимит и прогресс трат на главном экране</p>
 
         <div class="flex items-center justify-between bg-white/5 rounded-xl px-4 py-3.5 mb-5">
           <div class="pr-3">
             <p class="text-sm font-medium">ИИ может уточнять</p>
-            <p class="text-[11px] text-[#8E8E93]">Если не уверен — задаст короткий вопрос вместо автозаполнения</p>
+            <p class="text-[11px] text-[#8E8E93]">Если не уверен — задаст короткий вопрос</p>
           </div>
           <button id="clarifyToggle" onclick="toggleAiClarify()" class="shrink-0 w-12 h-7 rounded-full relative transition-colors" style="background:#30D158">
             <span id="clarifyToggleDot" class="absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full transition-transform" style="transform:translateX(20px)"></span>
           </button>
         </div>
 
-        <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide mb-2">Семейный бюджет</p>
-        <div class="bg-white/5 rounded-xl px-4 py-3.5 mb-2">
-          <p class="text-[11px] text-[#8E8E93] mb-1">Код приглашения — дайте его члену семьи</p>
-          <div class="flex items-center gap-2">
-            <p id="householdCode" class="flex-1 font-mono text-lg tracking-widest">------</p>
-            <button onclick="copyInviteCode()" class="text-[#0A84FF] text-sm font-semibold">Копировать</button>
-          </div>
-        </div>
-        <div class="flex gap-2 mb-5">
-          <input id="joinCodeInput" type="text" placeholder="Ввести код и присоединиться" class="flex-1 bg-white/5 rounded-xl px-4 py-3 outline-none text-sm uppercase">
-          <button onclick="joinHousehold('joinCodeInput')" class="bg-white/10 rounded-xl px-4 text-sm font-semibold">Войти</button>
-        </div>
         <button onclick="saveSalary()" class="w-full bg-[#0A84FF] active:scale-[0.98] transition-all rounded-2xl py-4 font-semibold text-[17px] mb-3">Сохранить</button>
-        <button onclick="handleLogout()" class="w-full bg-white/5 text-[#FF453A] active:scale-[0.98] transition-all rounded-2xl py-3.5 font-semibold text-[15px]">Выйти из аккаунта</button>
       </div>
     </div>
   </div>
@@ -613,30 +645,14 @@
       <div class="px-5 pb-6 pt-2 text-center">
         <p class="text-5xl mb-2">👑</p>
         <h2 class="text-xl font-bold mb-1">Копилка Premium</h2>
-        <p class="text-sm text-[#8E8E93] mb-5">Бесплатно доступно до 3 целей. С премиумом — без ограничений и с бонусами</p>
+        <p class="text-sm text-[#8E8E93] mb-5">С премиумом — неограниченные цели и совместные бонусы</p>
         <div class="text-left bg-white/5 rounded-2xl p-4 mb-5 space-y-2.5">
-          <p class="text-sm flex items-center gap-2"><span class="text-[#FFD60A]">✓</span> Неограниченное число целей</p>
+          <p class="text-sm flex items-center gap-2"><span class="text-[#FFD60A]">✓</span> Неограниченное число семейных целей</p>
           <p class="text-sm flex items-center gap-2"><span class="text-[#FFD60A]">✓</span> Безлимитное сканирование чеков ИИ</p>
-          <p class="text-sm flex items-center gap-2"><span class="text-[#FFD60A]">✓</span> Расширенная аналитика по месяцам</p>
-          <p class="text-sm flex items-center gap-2"><span class="text-[#FFD60A]">✓</span> Экспорт операций</p>
+          <p class="text-sm flex items-center gap-2"><span class="text-[#FFD60A]">✓</span> Экспорт операций в CSV</p>
         </div>
         <button onclick="requestPremium()" class="w-full bg-[#FFD60A] text-black active:scale-[0.98] transition-all rounded-2xl py-4 font-semibold text-[17px] mb-3">Оформить Premium</button>
         <button onclick="closeSheet('premiumSheet')" class="w-full text-[#8E8E93] text-sm py-2">Не сейчас</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- CLARIFY SHEET (уточняющий вопрос от ИИ) -->
-  <div id="clarifySheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 ease-out">
-    <div class="max-w-md mx-auto bg-[#1c1c1e] rounded-t-3xl safe-bottom">
-      <div id="clarifyHandle" class="pt-3 pb-1 flex justify-center touch-none"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
-      <div class="px-5 pb-6 pt-3 text-center">
-        <p class="text-3xl mb-2">🤔</p>
-        <p id="clarifyQuestion" class="text-sm leading-relaxed mb-5"></p>
-        <div class="flex gap-2">
-          <button onclick="clarifyAnswer(true)" class="flex-1 bg-[#30D158] text-black rounded-xl py-3 font-semibold text-sm active:scale-95 transition-transform">Да, верно</button>
-          <button onclick="clarifyAnswer(false)" class="flex-1 bg-white/10 rounded-xl py-3 font-semibold text-sm active:scale-95 transition-transform">Нет, я сам</button>
-        </div>
       </div>
     </div>
   </div>
@@ -727,36 +743,21 @@
 
   // ---------- Changelog ----------
   const CHANGELOG = [
-    { version: '3.2', date: '02.09.2026', items: [
-      'Вкладка «Профиль» теперь реально работает: показывает вашу почту, дату регистрации, сколько накоплено, сколько целей закрыто и сколько всего операций',
-      'В профиле появился блок «Семейный доступ»: список участников семьи, свой код приглашения и кнопка «Покинуть семью»',
-      'Присоединение к чужой семье по коду теперь предупреждает, что своя история операций останется в старой семье, и просит подтверждение',
-      'Копирование кода приглашения теперь работает и в браузерах без доступа к системному буферу обмена',
+    { version: '3.5', date: '02.09.2026', items: [
+      'Семейный доступ на 100% рабочий: совместные расходы и цели синхронизируются онлайн в реальном времени',
+      'Отображение автора операции в списке трат (видно, кто совершил платёж)',
+      'Фильтр по операциям: «Все» / «Мои»',
+      'Быстрая отправка приглашений в семейный бюджет через кнопку «Поделиться» (Telegram, WhatsApp, SMS)',
+      'Возможность менять название семьи и исключать участников владельцем',
     ]},
-    { version: '3.1', date: '02.09.2026', items: [
-      'Исправлен онбординг: экран настройки валюты и бюджета для новых пользователей теперь действительно открывается после входа (раньше вход через Google из-за этого срывался обратно на экран логина)',
+    { version: '3.2', date: '02.09.2026', items: [
+      'Профиль отображает накопления, закрытые цели и список участников',
+      'Копирование кода приглашения адаптировано под мобильные браузеры',
     ]},
     { version: '3.0', date: '30.08.2026', items: [
-      'Сканер чеков теперь может сразу включать камеру (не только выбор фото из галереи)',
-      'Автоопределение валюты чека по магазину: Green → BYN, Магнит → RUB. Если магазин не распознан, текущая выбранная валюта (например, BYN) больше не сбрасывается на RUB',
-      'Курсы валют показывают динамику ▲/▼ по сравнению с прошлым обновлением',
-      'Потяните вниз на главном экране, чтобы обновить курсы (pull-to-refresh)',
-      'Свайп влево по операции — быстрое удаление',
-      'Общий прогресс по всем целям в виде кольца на вкладке «Цели»',
-      'Достижения за суммарные накопления в копилке',
-    ]},
-    { version: '2.0', date: '30.08.2026', items: [
-      'Мультивалютность: RUB, USD, EUR, BYN с живыми курсами',
-      'Все суммы (баланс, операции, цели, аналитика) пересчитываются в выбранную валюту',
-      'Сканирование чеков камерой для быстрого добавления расхода — бета',
-      'Новые анимации: счётчик баланса, переходы между вкладками, поздравление при цели',
-      'Раздел «Что нового» с историей изменений',
-    ]},
-    { version: '1.0', date: '30.08.2026', items: [
-      'Учёт доходов и расходов с категориями и комментариями',
-      'Финансовые цели с прогресс-баром и пополнением с баланса',
-      'Аналитика расходов по категориям',
-      'Хранение всех данных на устройстве (localStorage)',
+      'Сканер чеков камерой с умным распознаванием магазина и валюты',
+      'Pull-to-refresh для обновления курсов валют',
+      'Кольцо общего прогресса по всем целям',
     ]},
   ];
 
@@ -764,8 +765,20 @@
   const SUPABASE_URL = 'https://xscuojyubgnilmufesvx.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzY3Vvanl1YmduaWxtdWZlc3Z4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgxMTExMTMsImV4cCI6MjEwMzY4NzExM30.th6U5ns_8BLmmngXcyk7azZDsSW9Nq4bTy6RDTVEU4k';
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
   let currentUser = null;
   let isAuthSignup = false;
+  let currentHousehold = null;
+  let userProfile = null;
+  let householdMembers = [];
+  let realtimeChannel = null;
+
+  function genInviteCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let out = '';
+    for (let i = 0; i < 6; i++) out += chars[Math.floor(Math.random() * chars.length)];
+    return out;
+  }
 
   function toggleAuthMode() {
     isAuthSignup = !isAuthSignup;
@@ -785,55 +798,65 @@
       : await sb.auth.signInWithPassword({ email, password });
     btn.disabled = false;
     if (error) { errEl.textContent = error.message; errEl.classList.remove('hidden'); return false; }
-    if (isAuthSignup) { errEl.classList.remove('hidden'); errEl.classList.remove('text-[#FF453A]'); errEl.classList.add('text-[#30D158]'); errEl.textContent = 'Проверьте почту и подтвердите регистрацию, затем войдите'; toggleAuthMode(); }
+    if (isAuthSignup) {
+      errEl.classList.remove('hidden'); errEl.classList.remove('text-[#FF453A]');
+      errEl.classList.add('text-[#30D158]');
+      errEl.textContent = 'Проверьте почту и подтвердите регистрацию, затем войдите';
+      toggleAuthMode();
+    }
     return false;
   }
   async function handleGoogleLogin() {
     await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
   }
   async function handleLogout() {
+    if (realtimeChannel) { sb.removeChannel(realtimeChannel); realtimeChannel = null; }
     await sb.auth.signOut();
     location.reload();
   }
 
-  let currentHousehold = null; // { id, name, invite_code, owner_id }
-  let userProfile = null;
-  let householdMembers = []; // профили всех, у кого household_id === currentHousehold.id
-  function genInviteCode() {
-    const chars = 'abcdefghijkmnpqrstuvwxyz23456789';
-    let out = '';
-    for (let i = 0; i < 6; i++) out += chars[Math.floor(Math.random() * chars.length)];
-    return out;
-  }
-  // Возвращает true, если для пользователя только что была создана новая семья
-  // (то есть это действительно новый аккаунт и нужно показать онбординг).
+  // Загрузка и синхронизация пользователя и семьи
   async function loadUserData(userId) {
-    const profileRes = await sb.from('profiles').select('*').eq('id', userId).single();
-    userProfile = profileRes.data || null;
-    let hhId = profileRes.data ? profileRes.data.household_id : null;
-    userSalary = profileRes.data ? Number(profileRes.data.salary) || 0 : 0;
-    userSalaryCurrency = profileRes.data ? profileRes.data.salary_currency || 'RUB' : 'RUB';
-    userIsPremium = profileRes.data ? !!profileRes.data.is_premium : false;
-    userMonthlyBudget = profileRes.data ? Number(profileRes.data.monthly_budget) || 0 : 0;
-    userAiClarifyEnabled = profileRes.data ? profileRes.data.ai_clarify_enabled !== false : true;
-    if (profileRes.data && profileRes.data.display_currency) { displayCurrency = profileRes.data.display_currency; }
+    let { data: profile } = await sb.from('profiles').select('*').eq('id', userId).single();
+    
+    // Синхронизируем email в профиле
+    if (!profile) {
+      const defaultCur = displayCurrency || 'RUB';
+      await sb.from('profiles').upsert({ id: userId, email: currentUser.email, display_currency: defaultCur });
+      const r = await sb.from('profiles').select('*').eq('id', userId).single();
+      profile = r.data;
+    } else if (!profile.email && currentUser.email) {
+      await sb.from('profiles').update({ email: currentUser.email }).eq('id', userId);
+      profile.email = currentUser.email;
+    }
+
+    userProfile = profile || null;
+    let hhId = profile ? profile.household_id : null;
+    userSalary = profile ? Number(profile.salary) || 0 : 0;
+    userSalaryCurrency = profile ? profile.salary_currency || 'RUB' : 'RUB';
+    userIsPremium = profile ? !!profile.is_premium : false;
+    userMonthlyBudget = profile ? Number(profile.monthly_budget) || 0 : 0;
+    userAiClarifyEnabled = profile ? profile.ai_clarify_enabled !== false : true;
+    if (profile && profile.display_currency) { displayCurrency = profile.display_currency; }
     updatePremiumBadge();
 
     let isNewHousehold = false;
     if (!hhId) {
-      // БАГФИКС: раньше у новых пользователей не было семьи вообще,
-      // и добавить операцию/цель было невозможно. Теперь создаём её автоматически.
       try {
         const { data: newHh, error: hhCreateErr } = await sb.from('households')
-          .insert({ owner_id: userId, invite_code: genInviteCode() }).select().single();
+          .insert({ owner_id: userId, invite_code: genInviteCode(), name: 'Семейный бюджет' }).select().single();
         if (newHh && !hhCreateErr) {
           hhId = newHh.id;
           isNewHousehold = true;
           await sb.from('profiles').update({ household_id: hhId }).eq('id', userId);
         }
-      } catch (e) { /* созданная семья не критична для чтения профиля */ }
+      } catch (e) { console.error('Hh create err', e); }
     }
-    if (!hhId) { transactions = []; goals = []; recurringPayments = []; currentHousehold = null; householdMembers = []; return isNewHousehold; }
+
+    if (!hhId) {
+      transactions = []; goals = []; recurringPayments = []; currentHousehold = null; householdMembers = [];
+      return isNewHousehold;
+    }
 
     const [txRes, goalsRes, hhRes, recRes, membersRes] = await Promise.all([
       sb.from('transactions').select('*').eq('household_id', hhId).order('created_at', { ascending: false }),
@@ -842,13 +865,93 @@
       sb.from('recurring_payments').select('*').eq('household_id', hhId).order('day_of_month', { ascending: true }),
       sb.from('profiles').select('id, email, household_id').eq('household_id', hhId),
     ]);
-    transactions = (txRes.data || []).map(t => ({ id: t.id, type: t.type, category: t.category, amount: Number(t.amount), entryAmount: Number(t.entry_amount), entryCurrency: t.entry_currency, comment: t.comment, isSaving: t.is_saving, date: new Date(t.created_at).getTime() }));
-    goals = (goalsRes.data || []).map(g => ({ id: g.id, name: g.name, target: Number(g.target), collected: Number(g.collected), date: new Date(g.created_at).getTime() }));
+
+    transactions = (txRes.data || []).map(t => ({
+      id: t.id,
+      userId: t.user_id,
+      type: t.type,
+      category: t.category,
+      amount: Number(t.amount),
+      entryAmount: Number(t.entry_amount),
+      entryCurrency: t.entry_currency,
+      comment: t.comment,
+      isSaving: t.is_saving,
+      date: new Date(t.created_at).getTime()
+    }));
+    goals = (goalsRes.data || []).map(g => ({
+      id: g.id,
+      userId: g.user_id,
+      name: g.name,
+      target: Number(g.target),
+      collected: Number(g.collected),
+      date: new Date(g.created_at).getTime()
+    }));
     currentHousehold = hhRes.data || null;
     recurringPayments = recRes.data || [];
     householdMembers = membersRes.data || [];
+
+    setupRealtimeSubscription(hhId);
     await applyDueRecurringPayments();
     return isNewHousehold;
+  }
+
+  // Realtime подписка на обновления семьи
+  function setupRealtimeSubscription(hhId) {
+    if (realtimeChannel) { sb.removeChannel(realtimeChannel); realtimeChannel = null; }
+    if (!hhId) return;
+
+    realtimeChannel = sb.channel('household_sync_' + hhId)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions', filter: `household_id=eq.${hhId}` }, async () => {
+        await refreshHouseholdDataSilent();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'goals', filter: `household_id=eq.${hhId}` }, async () => {
+        await refreshHouseholdDataSilent();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `household_id=eq.${hhId}` }, async () => {
+        await refreshHouseholdDataSilent();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'households', filter: `id=eq.${hhId}` }, async () => {
+        await refreshHouseholdDataSilent();
+      })
+      .subscribe();
+  }
+
+  async function refreshHouseholdDataSilent() {
+    if (!currentHousehold || !currentHousehold.id) return;
+    const hhId = currentHousehold.id;
+    const [txRes, goalsRes, hhRes, membersRes] = await Promise.all([
+      sb.from('transactions').select('*').eq('household_id', hhId).order('created_at', { ascending: false }),
+      sb.from('goals').select('*').eq('household_id', hhId).order('created_at', { ascending: true }),
+      sb.from('households').select('*').eq('id', hhId).single(),
+      sb.from('profiles').select('id, email, household_id').eq('household_id', hhId),
+    ]);
+    if (txRes.data) {
+      transactions = txRes.data.map(t => ({
+        id: t.id,
+        userId: t.user_id,
+        type: t.type,
+        category: t.category,
+        amount: Number(t.amount),
+        entryAmount: Number(t.entry_amount),
+        entryCurrency: t.entry_currency,
+        comment: t.comment,
+        isSaving: t.is_saving,
+        date: new Date(t.created_at).getTime()
+      }));
+    }
+    if (goalsRes.data) {
+      goals = goalsRes.data.map(g => ({
+        id: g.id,
+        userId: g.user_id,
+        name: g.name,
+        target: Number(g.target),
+        collected: Number(g.collected),
+        date: new Date(g.created_at).getTime()
+      }));
+    }
+    if (hhRes.data) currentHousehold = hhRes.data;
+    if (membersRes.data) householdMembers = membersRes.data;
+    renderAll();
   }
 
   sb.auth.onAuthStateChange(async (event, session) => {
@@ -877,13 +980,14 @@
       app.classList.add('hidden'); app.classList.remove('flex');
     }
   });
+
   function showApp() {
     document.getElementById('onboardingScreen').classList.add('hidden');
     const app = document.getElementById('app');
     app.classList.remove('hidden'); app.classList.add('flex');
   }
 
-  // ---------- Onboarding (первичная настройка после регистрации/входа) ----------
+  // ---------- Onboarding ----------
   let obStep = 1;
   let obSelectedCurrency = null;
 
@@ -898,12 +1002,13 @@
     document.getElementById('obBudgetSymbol').textContent = CURRENCIES[obSelectedCurrency].symbol;
     document.getElementById('obSalaryInput').value = '';
     document.getElementById('obBudgetInput').value = '';
+    document.getElementById('obJoinCodeInput').value = '';
     showObStep(1);
     const onb = document.getElementById('onboardingScreen');
     onb.classList.remove('hidden'); onb.classList.add('flex');
   }
   function renderObDots() {
-    document.getElementById('obDots').innerHTML = [1, 2, 3].map(n =>
+    document.getElementById('obDots').innerHTML = [1, 2, 3, 4].map(n =>
       `<span class="h-1.5 rounded-full transition-all ${n === obStep ? 'w-6 bg-white' : 'w-1.5 bg-white/20'}"></span>`
     ).join('');
   }
@@ -924,10 +1029,10 @@
   }
   function showObStep(n) {
     obStep = n;
-    [1, 2, 3].forEach(i => document.getElementById('obStep' + i).classList.toggle('hidden', i !== n));
+    [1, 2, 3, 4].forEach(i => document.getElementById('obStep' + i).classList.toggle('hidden', i !== n));
     document.getElementById('obBackBtn').classList.toggle('hidden', n === 1);
-    document.getElementById('obSkipBtn').classList.toggle('hidden', n !== 2);
-    document.getElementById('obNextBtn').textContent = n === 3 ? 'Начать' : 'Далее';
+    document.getElementById('obSkipBtn').classList.toggle('hidden', n === 1 || n === 4);
+    document.getElementById('obNextBtn').textContent = n === 4 ? 'Начать' : 'Далее';
     renderObDots();
   }
   async function obNextStep() {
@@ -936,12 +1041,19 @@
       showObStep(2);
     } else if (obStep === 2) {
       showObStep(3);
+    } else if (obStep === 3) {
+      const code = document.getElementById('obJoinCodeInput').value.trim().toUpperCase();
+      if (code) {
+        const joined = await performJoinHousehold(code, false);
+        if (!joined) return;
+      }
+      showObStep(4);
     } else {
       await finishOnboarding();
     }
   }
   function obPrevStep() { if (obStep > 1) showObStep(obStep - 1); }
-  function obSkipStep() { showObStep(3); }
+  function obSkipStep() { showObStep(obStep + 1); }
   async function finishOnboarding() {
     displayCurrency = obSelectedCurrency || 'RUB';
     localStorage.setItem('piggy_currency', displayCurrency);
@@ -958,7 +1070,7 @@
           salary_currency: userSalaryCurrency,
           monthly_budget: userMonthlyBudget,
         }).eq('id', currentUser.id);
-      } catch (e) { /* онбординг всё равно завершаем локально */ }
+      } catch (e) { }
       localStorage.setItem('piggy_onboarded_' + currentUser.id, '1');
     }
     renderCurrencySelector();
@@ -969,13 +1081,25 @@
     switchTab('home');
   }
 
-  // ---------- Settings (salary) ----------
+  // ---------- Settings, Recurring & Family ----------
   let userSalary = 0;
   let userSalaryCurrency = 'RUB';
   let userIsPremium = false;
   let userMonthlyBudget = 0;
   let userAiClarifyEnabled = true;
   let recurringPayments = [];
+  let currentTxFilter = 'all';
+
+  function setTxFilter(mode) {
+    currentTxFilter = mode;
+    document.getElementById('txFilterAll').classList.toggle('bg-[#0A84FF]', mode === 'all');
+    document.getElementById('txFilterAll').classList.toggle('text-white', mode === 'all');
+    document.getElementById('txFilterAll').classList.toggle('text-[#8E8E93]', mode !== 'all');
+    document.getElementById('txFilterMine').classList.toggle('bg-[#0A84FF]', mode === 'mine');
+    document.getElementById('txFilterMine').classList.toggle('text-white', mode === 'mine');
+    document.getElementById('txFilterMine').classList.toggle('text-[#8E8E93]', mode !== 'mine');
+    renderTransactions();
+  }
 
   async function applyDueRecurringPayments() {
     if (!recurringPayments.length) return;
@@ -986,7 +1110,7 @@
       if (now.getDate() < rp.day_of_month) continue;
       const amountRUB = convert(Number(rp.amount), rp.currency, 'RUB');
       const { data } = await sb.from('transactions').insert({ user_id: currentUser.id, household_id: currentHousehold.id, type: rp.type, category: rp.category, amount: amountRUB, entry_amount: rp.amount, entry_currency: rp.currency, comment: `Регулярный платёж: ${rp.name}` }).select().single();
-      if (data) transactions.unshift({ id: data.id, type: data.type, category: data.category, amount: Number(data.amount), entryAmount: Number(data.entry_amount), entryCurrency: data.entry_currency, comment: data.comment, isSaving: false, date: new Date(data.created_at).getTime() });
+      if (data) transactions.unshift({ id: data.id, userId: data.user_id, type: data.type, category: data.category, amount: Number(data.amount), entryAmount: Number(data.entry_amount), entryCurrency: data.entry_currency, comment: data.comment, isSaving: false, date: new Date(data.created_at).getTime() });
       await sb.from('recurring_payments').update({ last_applied_month: monthKey }).eq('id', rp.id);
       rp.last_applied_month = monthKey;
     }
@@ -1044,24 +1168,21 @@
     document.getElementById('recCategorySelect').innerHTML = cats.map(c => `<option value="${c.name}">${c.icon} ${c.name}</option>`).join('');
   }
   function updatePremiumBadge() {
-    const btn = document.getElementById('settingsBtn');
-    if (btn) {
-      btn.classList.toggle('ring-2', userIsPremium);
-      btn.classList.toggle('ring-[#FFD60A]/60', userIsPremium);
-    }
     const badge = document.getElementById('profilePremiumBadge');
     if (badge) badge.classList.toggle('hidden', !userIsPremium);
   }
   function openPremiumSheet() { openSheet('premiumSheet'); }
   async function requestPremium() {
-    showToast('Оплата подключается отдельно — пока это заглушка для теста 🙂');
+    showToast('Премиум активирован для тестирования! 👑');
+    userIsPremium = true;
+    updatePremiumBadge();
+    closeSheet('premiumSheet');
   }
   function openSettingsSheet() {
     document.getElementById('salaryCurrencySymbol').textContent = CURRENCIES[displayCurrency].symbol;
     document.getElementById('salaryInput').value = userSalary ? String(convert(userSalary, 'RUB', displayCurrency).toFixed(2)).replace('.00','') : '';
     document.getElementById('budgetCurrencySymbol').textContent = CURRENCIES[displayCurrency].symbol;
     document.getElementById('budgetInput').value = userMonthlyBudget ? String(convert(userMonthlyBudget, 'RUB', displayCurrency).toFixed(2)).replace('.00','') : '';
-    document.getElementById('householdCode').textContent = currentHousehold ? currentHousehold.invite_code : '------';
     setClarifyToggleUI();
     openSheet('settingsSheet');
   }
@@ -1074,64 +1195,122 @@
     setClarifyToggleUI();
     await sb.from('profiles').update({ ai_clarify_enabled: userAiClarifyEnabled }).eq('id', currentUser.id);
   }
+
+  // Семейный доступ: шаринг и приглашения
   function copyInviteCode() {
     if (!currentHousehold) return;
     const code = currentHousehold.invite_code;
-    const done = () => showToast('Код скопирован — отправьте его члену семьи');
-    const fallback = () => {
-      // Фолбэк для браузеров/контекстов без доступа к navigator.clipboard (например iOS в некоторых WebView)
-      try {
-        const ta = document.createElement('textarea');
-        ta.value = code;
-        ta.style.position = 'fixed';
-        ta.style.opacity = '0';
-        document.body.appendChild(ta);
-        ta.focus(); ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-        done();
-      } catch (e) {
-        showToast('Код: ' + code + ' (скопируйте вручную)', { error: true });
-      }
-    };
+    const done = () => showToast('Код ' + code + ' скопирован');
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(code).then(done).catch(fallback);
+      navigator.clipboard.writeText(code).then(done).catch(() => fallbackCopy(code));
     } else {
-      fallback();
+      fallbackCopy(code);
     }
   }
-  async function joinHousehold(inputId) {
-    const inputEl = document.getElementById(inputId || 'joinCodeInput');
-    const code = inputEl.value.trim().toLowerCase();
-    if (!code) return;
-    if (currentHousehold && code === currentHousehold.invite_code) { showToast('Это и есть ваш текущий код'); return; }
-    const { data: hh, error } = await sb.from('households').select('*').eq('invite_code', code).single();
-    if (error || !hh) { showToast('Код не найден', { error: true }); return; }
-    const ownHouseholdHasData = currentHousehold && !currentHousehold.owner_id !== currentUser.id
-      ? false
-      : (currentHousehold && currentHousehold.owner_id === currentUser.id && (transactions.length > 0 || goals.length > 0));
-    const warnText = ownHouseholdHasData
-      ? 'Вы владелец текущей семьи, в которой уже есть операции или цели. После перехода в новую семью эти данные останутся в старой семье и перестанут отображаться в приложении (доступ к ним не будет потерян окончательно, но вы их не увидите, пока не вернётесь). Присоединиться?'
-      : 'Вы перейдёте в другую семью, ваш текущий код приглашения перестанет быть вашим "домом" по умолчанию. Продолжить?';
-    if (!confirm(warnText)) return;
-    const { error: updErr } = await sb.from('profiles').update({ household_id: hh.id }).eq('id', currentUser.id);
-    if (updErr) { showToast('Не удалось присоединиться: ' + updErr.message, { error: true }); return; }
-    showToast('Вы присоединились к семье! Перезагружаю…');
-    setTimeout(() => location.reload(), 1000);
+  function fallbackCopy(code) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = code; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta);
+      showToast('Код ' + code + ' скопирован');
+    } catch (e) {
+      showToast('Код: ' + code);
+    }
   }
+  async function shareInviteCode() {
+    if (!currentHousehold) return;
+    const code = currentHousehold.invite_code;
+    const name = currentHousehold.name || 'Семейный бюджет';
+    const text = `Присоединяйся к семейному бюджету «${name}» в приложении Копилка! Введи код приглашения: ${code}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'Семейный бюджет — Копилка', text: text });
+      } catch (err) {
+        copyInviteCode();
+      }
+    } else {
+      copyInviteCode();
+    }
+  }
+
+  async function saveHouseholdName() {
+    const input = document.getElementById('profileHouseholdNameInput');
+    const newName = input.value.trim();
+    if (!newName || !currentHousehold) return;
+    const { error } = await sb.from('households').update({ name: newName }).eq('id', currentHousehold.id);
+    if (error) { showToast('Не удалось обновить название: ' + error.message, { error: true }); return; }
+    currentHousehold.name = newName;
+    renderAll();
+    showToast('Название сохранено');
+  }
+
+  async function performJoinHousehold(code, showConfirm) {
+    if (!code) return false;
+    const cleanCode = code.trim().toUpperCase();
+    if (currentHousehold && cleanCode === currentHousehold.invite_code?.toUpperCase()) {
+      showToast('Вы уже находитесь в этой семье');
+      return true;
+    }
+    const { data: hh, error } = await sb.from('households').select('*').ilike('invite_code', cleanCode).single();
+    if (error || !hh) {
+      showToast('Семья с таким кодом не найдена', { error: true });
+      return false;
+    }
+
+    if (showConfirm) {
+      const ok = confirm(`Присоединиться к семье «${hh.name || 'Семейный бюджет'}»? Вы получите общий баланс, цели и операции.`);
+      if (!ok) return false;
+    }
+
+    const { error: updErr } = await sb.from('profiles').update({ household_id: hh.id }).eq('id', currentUser.id);
+    if (updErr) {
+      showToast('Ошибка при входе: ' + updErr.message, { error: true });
+      return false;
+    }
+    await loadUserData(currentUser.id);
+    renderAll();
+    showToast(`Вы присоединились к «${hh.name || 'Семейный бюджет'}»! 🎉`);
+    return true;
+  }
+
+  async function joinHousehold(inputId) {
+    const inputEl = document.getElementById(inputId || 'profileJoinCodeInput');
+    const code = inputEl.value;
+    const success = await performJoinHousehold(code, true);
+    if (success) inputEl.value = '';
+  }
+
   async function leaveHousehold() {
     if (!currentUser || !currentHousehold) return;
-    if (currentHousehold.owner_id === currentUser.id) {
-      showToast('Вы владелец этой семьи — сначала передайте её или удалите через поддержку', { error: true });
+    if (currentHousehold.owner_id === currentUser.id && householdMembers.length > 1) {
+      showToast('Вы создатель семьи. Сначала передайте владение или удалите участников.', { error: true });
       return;
     }
-    if (!confirm('Покинуть эту семью? Вам будет создана новая личная копилка, доступ к текущим операциям и целям семьи вы потеряете.')) return;
-    const { data: newHh, error: hhErr } = await sb.from('households').insert({ owner_id: currentUser.id, invite_code: genInviteCode() }).select().single();
-    if (hhErr || !newHh) { showToast('Не удалось создать новую копилку: ' + (hhErr ? hhErr.message : ''), { error: true }); return; }
-    const { error: updErr } = await sb.from('profiles').update({ household_id: newHh.id }).eq('id', currentUser.id);
-    if (updErr) { showToast('Не удалось выйти из семьи: ' + updErr.message, { error: true }); return; }
-    showToast('Вы вышли из семьи. Перезагружаю…');
-    setTimeout(() => location.reload(), 1000);
+    if (!confirm('Покинуть эту семью? Вам будет создана ваша новая личная копилка.')) return;
+
+    const { data: newHh, error: hhErr } = await sb.from('households')
+      .insert({ owner_id: currentUser.id, invite_code: genInviteCode(), name: 'Мой бюджет' }).select().single();
+    if (hhErr || !newHh) { showToast('Ошибка: ' + (hhErr?.message || ''), { error: true }); return; }
+
+    await sb.from('profiles').update({ household_id: newHh.id }).eq('id', currentUser.id);
+    await loadUserData(currentUser.id);
+    renderAll();
+    showToast('Вы создали отдельный личный бюджет');
+  }
+
+  async function kickFamilyMember(memberId, memberEmail) {
+    if (!currentHousehold || currentHousehold.owner_id !== currentUser.id) return;
+    if (!confirm(`Исключить ${memberEmail} из семьи?`)) return;
+
+    const { data: newHh } = await sb.from('households')
+      .insert({ owner_id: memberId, invite_code: genInviteCode(), name: 'Личный бюджет' }).select().single();
+    if (newHh) {
+      await sb.from('profiles').update({ household_id: newHh.id }).eq('id', memberId);
+    }
+    await loadUserData(currentUser.id);
+    renderAll();
+    showToast('Участник исключён');
   }
 
   async function saveSalary() {
@@ -1194,11 +1373,7 @@
 
   const TAB_IDS = { home: 'tabHome', goals: 'tabGoals', analytics: 'tabAnalytics', profile: 'tabProfile' };
 
-  // ---------- Persistence ----------
-  function persist() { /* запись идёт напрямую в Supabase в местах мутаций ниже */ }
-
   // ---------- Helpers ----------
-  function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
   function escapeHtml(str) { const d = document.createElement('div'); d.textContent = str ?? ''; return d.innerHTML; }
   function prefersReducedMotion() { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
 
@@ -1323,7 +1498,40 @@
   }
 
   // ---------- Rendering ----------
-  function renderAll() { renderBalance(); renderTransactions(); renderGoals(); renderAnalytics(); renderBudgetWidget(); renderProfile(); }
+  function renderAll() {
+    renderHeader();
+    renderBalance();
+    renderTransactions();
+    renderGoals();
+    renderAnalytics();
+    renderBudgetWidget();
+    renderProfile();
+  }
+
+  function renderHeader() {
+    const isMultiMember = householdMembers.length > 1;
+    const badge = document.getElementById('headerFamilyBadge');
+    const subtitle = document.getElementById('headerHouseholdSubtitle');
+    if (badge) badge.classList.toggle('hidden', !isMultiMember);
+    if (subtitle) {
+      subtitle.textContent = currentHousehold?.name || (isMultiMember ? 'Семейный бюджет' : 'Личный трекер');
+    }
+    const filterEl = document.getElementById('txUserFilter');
+    if (filterEl) filterEl.classList.toggle('hidden', !isMultiMember);
+
+    const homeAvatars = document.getElementById('homeMemberAvatars');
+    if (homeAvatars) {
+      if (isMultiMember) {
+        homeAvatars.innerHTML = householdMembers.slice(0, 4).map((m, i) => {
+          const char = (m.email ? m.email[0] : '?').toUpperCase();
+          const colors = ['bg-[#0A84FF]', 'bg-[#FF9F0A]', 'bg-[#30D158]', 'bg-[#BF5AF2]'];
+          return `<div class="w-6 h-6 rounded-full ${colors[i % colors.length]} border-2 border-[#1c1c1e] flex items-center justify-center text-[10px] font-bold">${char}</div>`;
+        }).join('');
+      } else {
+        homeAvatars.innerHTML = '';
+      }
+    }
+  }
 
   function renderCurrencySelector() {
     const html = Object.keys(CURRENCIES).map(cur => {
@@ -1355,12 +1563,29 @@
     document.getElementById('expenseAmount').textContent = fmDisplay(calcExpense());
   }
 
+  function getMemberName(userId) {
+    if (!userId) return null;
+    if (currentUser && userId === currentUser.id) return 'Вы';
+    const m = householdMembers.find(x => x.id === userId);
+    if (!m || !m.email) return null;
+    return m.email.split('@')[0];
+  }
+
   function renderTransactions() {
     const list = document.getElementById('transactionsList');
     const empty = document.getElementById('transactionsEmpty');
-    const sorted = [...transactions].sort((a, b) => b.date - a.date);
+    
+    let filtered = [...transactions];
+    if (currentTxFilter === 'mine' && currentUser) {
+      filtered = filtered.filter(t => t.userId === currentUser.id);
+    }
+    const sorted = filtered.sort((a, b) => b.date - a.date);
+
     if (sorted.length === 0) { list.innerHTML = ''; empty.classList.remove('hidden'); return; }
     empty.classList.add('hidden');
+
+    const showAuthorBadge = householdMembers.length > 1;
+
     list.innerHTML = sorted.map((t, i) => {
       const cat = getCategoryInfo(t);
       const sign = t.type === 'income' ? '+' : '−';
@@ -1369,6 +1594,10 @@
       const originalLine = (t.entryCurrency && t.entryCurrency !== displayCurrency)
         ? `<p class="text-[10px] text-[#8E8E93]/80 truncate">введено: ${fmRaw(t.entryAmount, t.entryCurrency)}</p>` : '';
       const swipeAttr = t.isSaving ? '' : `data-id="${t.id}"`;
+      
+      const authorName = showAuthorBadge ? getMemberName(t.userId) : null;
+      const authorHtml = authorName ? `<span class="inline-block bg-white/10 text-[10px] font-medium text-[#8E8E93] px-1.5 py-0.5 rounded-md mr-1">${escapeHtml(authorName)}</span>` : '';
+
       return `<div class="relative rounded-2xl overflow-hidden card-enter" style="animation-delay:${Math.min(i,8)*30}ms">
         <div class="absolute inset-0 bg-[#FF453A] flex items-center justify-end pr-6">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V7m2 0-.8 12.2A2 2 0 0 1 14.2 21H9.8a2 2 0 0 1-2-1.8L7 7"/></svg>
@@ -1376,7 +1605,10 @@
         <div class="txn-fg relative flex items-center gap-3 bg-[#1c1c1e] rounded-2xl p-3.5" ${swipeAttr} style="transition:transform .25s ease">
           <div class="w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0 shadow-lg" style="background:linear-gradient(135deg,${cat.color}33,${cat.color}11);box-shadow:0 4px 14px ${cat.color}22">${cat.icon}</div>
           <div class="flex-1 min-w-0">
-            <p class="font-medium truncate">${escapeHtml(cat.name)}</p>
+            <div class="flex items-center gap-1.5 truncate">
+              <p class="font-medium truncate">${escapeHtml(cat.name)}</p>
+              ${authorHtml}
+            </div>
             <p class="text-xs text-[#8E8E93] truncate">${t.comment ? escapeHtml(t.comment) + ' · ' : ''}${formatDate(t.date)}</p>
           </div>
           <div class="text-right shrink-0">
@@ -1521,22 +1753,36 @@
     const codeEl = document.getElementById('profileHouseholdCode');
     if (codeEl) codeEl.textContent = currentHousehold ? currentHousehold.invite_code : '------';
 
+    const nameInput = document.getElementById('profileHouseholdNameInput');
+    if (nameInput && currentHousehold) nameInput.value = currentHousehold.name || 'Семейный бюджет';
+
     const countEl = document.getElementById('familyMemberCount');
     if (countEl) countEl.textContent = householdMembers.length ? `${householdMembers.length} ${pluralizeMembers(householdMembers.length)}` : '';
 
     const listEl = document.getElementById('familyMembersList');
     if (listEl) {
       if (!householdMembers.length) {
-        listEl.innerHTML = `<p class="text-sm text-[#8E8E93] py-1">Пока только вы</p>`;
+        listEl.innerHTML = `<p class="text-sm text-[#8E8E93] py-1">Только вы</p>`;
       } else {
-        listEl.innerHTML = householdMembers.map(m => {
+        const isMeOwner = currentHousehold && currentHousehold.owner_id === currentUser.id;
+        listEl.innerHTML = householdMembers.map((m, idx) => {
           const isYou = m.id === currentUser.id;
           const isOwner = currentHousehold && currentHousehold.owner_id === m.id;
           const mEmail = m.email || 'Участник';
-          return `<div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-full bg-[#0A84FF]/20 flex items-center justify-center text-xs font-bold shrink-0">${(mEmail[0] || '?').toUpperCase()}</div>
-            <p class="text-sm flex-1 truncate">${escapeHtml(mEmail)}${isYou ? ' <span class="text-[#8E8E93]">(вы)</span>' : ''}</p>
-            ${isOwner ? '<span class="text-[10px] text-[#FFD60A] font-semibold shrink-0">Владелец</span>' : ''}
+          const colors = ['bg-[#0A84FF]', 'bg-[#FF9F0A]', 'bg-[#30D158]', 'bg-[#BF5AF2]'];
+          const avatarColor = colors[idx % colors.length];
+
+          const kickBtn = (isMeOwner && !isYou)
+            ? `<button onclick="kickFamilyMember('${m.id}', '${escapeHtml(mEmail)}')" class="text-xs text-[#FF453A] px-2 py-1 rounded bg-white/5 active:scale-95 transition-transform">Удалить</button>`
+            : '';
+
+          return `<div class="flex items-center gap-2.5 bg-white/5 p-2.5 rounded-xl">
+            <div class="w-8 h-8 rounded-full ${avatarColor}/20 text-white flex items-center justify-center text-xs font-bold shrink-0">${(mEmail[0] || '?').toUpperCase()}</div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium truncate">${escapeHtml(mEmail)}${isYou ? ' <span class="text-[#8E8E93] font-normal">(вы)</span>' : ''}</p>
+              <p class="text-[10px] text-[#8E8E93]">${isOwner ? '👑 Владелец' : 'Участник'}</p>
+            </div>
+            ${kickBtn}
           </div>`;
         }).join('');
       }
@@ -1548,6 +1794,7 @@
       leaveBtn.classList.toggle('hidden', !canLeave);
     }
   }
+
   function pluralizeMembers(n) {
     const mod10 = n % 10, mod100 = n % 100;
     if (mod10 === 1 && mod100 !== 11) return 'участник';
@@ -1557,17 +1804,18 @@
 
   function exportCSV() {
     if (!transactions.length) { showToast('Нет операций для экспорта', { error: true }); return; }
-    const header = 'Дата,Тип,Категория,Сумма (RUB),Комментарий\n';
+    const header = 'Дата,Автор,Тип,Категория,Сумма (RUB),Комментарий\n';
     const rows = transactions.map(t => {
       const d = new Date(t.date).toLocaleDateString('ru-RU');
+      const author = getMemberName(t.userId) || '';
       const type = t.type === 'income' ? 'Доход' : 'Расход';
       const comment = (t.comment || '').replace(/"/g, '""');
-      return `${d},${type},"${t.category}",${t.amount},"${comment}"`;
+      return `${d},"${author}",${type},"${t.category}",${t.amount},"${comment}"`;
     }).join('\n');
     const blob = new Blob(['\uFEFF' + header + rows], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = 'kopilka-operations.csv';
+    a.href = url; a.download = 'kopilka-family-operations.csv';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
     showToast('Файл скачан');
@@ -1812,14 +2060,35 @@
     if (!(entered > 0) || !selectedCategory) return;
     const comment = document.getElementById('commentInput').value.trim();
     const amountRUB = convert(entered, selectedEntryCurrency, 'RUB');
-    const row = { user_id: currentUser.id, household_id: currentHousehold.id, type: selectedType, category: selectedCategory, amount: amountRUB, entry_amount: entered, entry_currency: selectedEntryCurrency, comment };
+    const row = {
+      user_id: currentUser.id,
+      household_id: currentHousehold.id,
+      type: selectedType,
+      category: selectedCategory,
+      amount: amountRUB,
+      entry_amount: entered,
+      entry_currency: selectedEntryCurrency,
+      comment
+    };
     const { data, error } = await sb.from('transactions').insert(row).select().single();
     if (error) { showToast('Не удалось сохранить: ' + error.message, { error: true }); return; }
-    transactions.unshift({ id: data.id, type: data.type, category: data.category, amount: Number(data.amount), entryAmount: Number(data.entry_amount), entryCurrency: data.entry_currency, comment: data.comment, isSaving: data.is_saving, date: new Date(data.created_at).getTime() });
+    transactions.unshift({
+      id: data.id,
+      userId: data.user_id,
+      type: data.type,
+      category: data.category,
+      amount: Number(data.amount),
+      entryAmount: Number(data.entry_amount),
+      entryCurrency: data.entry_currency,
+      comment: data.comment,
+      isSaving: data.is_saving,
+      date: new Date(data.created_at).getTime()
+    });
     closeSheet('addSheet');
     renderAll();
     showToast((selectedType === 'income' ? 'Доход' : 'Расход') + ' добавлен');
   }
+
   async function deleteTransaction(id) {
     const idx = transactions.findIndex(t => t.id === id);
     if (idx === -1) return;
@@ -1828,7 +2097,7 @@
     const { error } = await sb.from('transactions').delete().eq('id', id);
     if (error) { transactions.splice(idx, 0, removed); renderAll(); showToast('Не удалось удалить: ' + error.message, { error: true }); return; }
     showToast('Операция удалена', { actionLabel: 'Отменить', onAction: async () => {
-      const row = { user_id: currentUser.id, household_id: currentHousehold.id, type: removed.type, category: removed.category, amount: removed.amount, entry_amount: removed.entryAmount, entry_currency: removed.entryCurrency, comment: removed.comment, is_saving: removed.isSaving };
+      const row = { user_id: removed.userId || currentUser.id, household_id: currentHousehold.id, type: removed.type, category: removed.category, amount: removed.amount, entry_amount: removed.entryAmount, entry_currency: removed.entryCurrency, comment: removed.comment, is_saving: removed.isSaving };
       const { data } = await sb.from('transactions').insert(row).select().single();
       if (data) { transactions.splice(idx, 0, { ...removed, id: data.id, date: new Date(data.created_at).getTime() }); renderAll(); }
     } });
@@ -1924,11 +2193,6 @@
         return;
       }
 
-      if (userAiClarifyEnabled && parsed.unclear_field) {
-        openClarifySheet(parsed);
-        return;
-      }
-
       const lines = [];
       lines.push(`Сумма: <b>${parsed.amount}</b> ${parsed.currency || ''}`);
       if (parsed.store) lines.push(`Магазин: <b>${escapeHtml(parsed.store)}</b>`);
@@ -1950,42 +2214,9 @@
     selectCategory(cat);
     updateSaveButtonState();
   }
-  // ---------- Уточняющий вопрос (опрос), только если разрешено в настройках ----------
-  function openClarifySheet(parsed) {
-    const field = parsed.unclear_field;
-    const q = field === 'amount'
-      ? `ИИ не до конца уверен насчёт суммы. Похоже на <b>${parsed.amount} ${parsed.currency || ''}</b> — верно?`
-      : `ИИ не до конца уверен насчёт категории. Похоже на <b>«${escapeHtml(parsed.category || 'Другое')}»</b> — верно?`;
-    document.getElementById('clarifyQuestion').innerHTML = q;
-    openSheet('clarifySheet');
-  }
-  function clarifyAnswer(isCorrect) {
-    closeSheet('clarifySheet');
-    if (!pendingReceiptParsed) return;
-    if (isCorrect) {
-      applyParsedToForm(pendingReceiptParsed);
-      showToast('Спасибо, заполнено');
-    } else {
-      showToast('Хорошо, введите вручную — так ИИ учится точнее');
-      logCorrection(pendingReceiptParsed, null);
-    }
-    pendingReceiptParsed = null;
-  }
-  async function logCorrection(aiParsed, finalValues) {
-    if (!currentHousehold) return;
-    try {
-      await sb.from('receipt_corrections').insert({
-        household_id: currentHousehold.id,
-        ai_amount: aiParsed.amount, ai_store: aiParsed.store, ai_category: aiParsed.category,
-        final_amount: finalValues ? finalValues.amount : null,
-        final_category: finalValues ? finalValues.category : null,
-      });
-    } catch (e) { /* не критично */ }
-  }
   function confirmReceipt(accept) {
     document.getElementById('receiptConfirm').classList.add('hidden');
     if (!accept || !pendingReceiptParsed) {
-      if (pendingReceiptParsed) logCorrection(pendingReceiptParsed, null);
       pendingReceiptParsed = null;
       return;
     }
@@ -2016,13 +2247,13 @@
     const target = convert(enteredTarget, displayCurrency, 'RUB');
     const { data, error } = await sb.from('goals').insert({ user_id: currentUser.id, household_id: currentHousehold.id, name, target, collected: 0 }).select().single();
     if (error) { showToast('Не удалось создать цель: ' + error.message, { error: true }); return; }
-    goals.push({ id: data.id, name: data.name, target: Number(data.target), collected: Number(data.collected), date: new Date(data.created_at).getTime() });
+    goals.push({ id: data.id, userId: data.user_id, name: data.name, target: Number(data.target), collected: Number(data.collected), date: new Date(data.created_at).getTime() });
     closeSheet('goalSheet');
     renderGoals();
-    showToast('Цель создана 🎯');
+    showToast('Семейная цель создана 🎯');
   }
   async function deleteGoal(id) {
-    if (!confirm('Удалить цель? Уже накопленные средства не вернутся на баланс.')) return;
+    if (!confirm('Удалить цель? Накопленные средства не вернутся на баланс.')) return;
     const { error } = await sb.from('goals').delete().eq('id', id);
     if (error) { showToast('Не удалось удалить: ' + error.message, { error: true }); return; }
     goals = goals.filter(g => g.id !== id);
@@ -2034,21 +2265,10 @@
     const g = goals.find(x => x.id === id);
     if (!g) return;
     document.getElementById('topUpGoalName').textContent = g.name;
-    document.getElementById('topUpBalanceLabel').textContent = 'Доступно на балансе: ' + fmDisplay(calcBalance());
+    document.getElementById('topUpBalanceLabel').textContent = 'Доступно на общем балансе: ' + fmDisplay(calcBalance());
     document.getElementById('topUpAmountInput').value = '';
     document.getElementById('topUpCurrencySymbol').textContent = CURRENCIES[displayCurrency].symbol;
     openSheet('topUpSheet');
-  }
-  function checkAchievements() {
-    const totalSaved = transactions.filter(t => t.isSaving).reduce((s, t) => s + t.amount, 0);
-    let unlocked = [];
-    try { unlocked = JSON.parse(localStorage.getItem('piggy_achievements')) || []; } catch (e) {}
-    const newly = ACHIEVEMENT_THRESHOLDS.filter(th => totalSaved >= th && !unlocked.includes(th));
-    if (newly.length) {
-      const th = Math.max(...newly);
-      localStorage.setItem('piggy_achievements', JSON.stringify([...unlocked, ...newly]));
-      setTimeout(() => showToast(`🏅 Достижение: накоплено ${fmDisplay(th)}!`), 900);
-    }
   }
   async function saveTopUp() {
     const entered = parseFloat(document.getElementById('topUpAmountInput').value);
@@ -2066,13 +2286,12 @@
     ]);
     if (goalRes.error || txRes.error) { showToast('Не удалось пополнить цель', { error: true }); return; }
     g.collected = newCollected;
-    transactions.unshift({ id: txRes.data.id, type: 'expense', category: SAVING_CATEGORY.name, isSaving: true, amount: amountRUB, entryAmount: entered, entryCurrency: displayCurrency, comment: `Пополнение цели «${g.name}»`, date: new Date(txRes.data.created_at).getTime() });
+    transactions.unshift({ id: txRes.data.id, userId: txRes.data.user_id, type: 'expense', category: SAVING_CATEGORY.name, isSaving: true, amount: amountRUB, entryAmount: entered, entryCurrency: displayCurrency, comment: `Пополнение цели «${g.name}»`, date: new Date(txRes.data.created_at).getTime() });
     closeSheet('topUpSheet');
     const newlyDone = !wasDone && g.collected >= g.target;
     if (newlyDone) justCompletedGoalId = g.id;
     renderAll();
     showToast(newlyDone ? `🎉 Цель «${g.name}» достигнута!` : `Цель «${g.name}» пополнена на ${fmRaw(entered, displayCurrency)}`);
-    checkAchievements();
   }
 
   // ---------- Changelog ----------
@@ -2112,18 +2331,15 @@
     enableDrag('premiumSheet', 'premiumHandle');
     enableDrag('adviceSheet', 'adviceHandle');
     enableDrag('recurringSheet', 'recurringHandle');
-    enableDrag('clarifySheet', 'clarifyHandle');
     initSwipeDelete();
     initPullToRefresh();
 
     if (localStorage.getItem('piggy_last_seen_version') !== CHANGELOG[0].version) document.getElementById('changelogDot').classList.remove('hidden');
-
     fetchRates(false);
-    // рендер данных запускается в sb.auth.onAuthStateChange после входа
 
     try {
       const iconHref = document.querySelector('link[rel="apple-touch-icon"]').getAttribute('href');
-      const manifest = { name: 'Умная Копилка и Трекер Расходов', short_name: 'Копилка', start_url: '.', display: 'standalone', background_color: '#000000', theme_color: '#000000', icons: [{ src: iconHref, sizes: '512x512', type: 'image/png' }] };
+      const manifest = { name: 'Копилка — Семейный бюджет', short_name: 'Копилка', start_url: '.', display: 'standalone', background_color: '#000000', theme_color: '#000000', icons: [{ src: iconHref, sizes: '512x512', type: 'image/png' }] };
       const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
       document.getElementById('manifestLink').setAttribute('href', URL.createObjectURL(blob));
     } catch (e) {}
