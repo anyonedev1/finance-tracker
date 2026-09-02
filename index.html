@@ -706,6 +706,9 @@
 
   // ---------- Changelog ----------
   const CHANGELOG = [
+    { version: '3.1', date: '02.09.2026', items: [
+      'Исправлен онбординг: экран настройки валюты и бюджета для новых пользователей теперь действительно открывается после входа (раньше вход через Google из-за этого срывался обратно на экран логина)',
+    ]},
     { version: '3.0', date: '30.08.2026', items: [
       'Сканер чеков теперь может сразу включать камеру (не только выбор фото из галереи)',
       'Автоопределение валюты чека по магазину: Green → BYN, Магнит → RUB. Если магазин не распознан, текущая выбранная валюта (например, BYN) больше не сбрасывается на RUB',
@@ -848,6 +851,92 @@
     document.getElementById('onboardingScreen').classList.add('hidden');
     const app = document.getElementById('app');
     app.classList.remove('hidden'); app.classList.add('flex');
+  }
+
+  // ---------- Onboarding (первичная настройка после регистрации/входа) ----------
+  let obStep = 1;
+  let obSelectedCurrency = null;
+
+  function openOnboarding() {
+    const app = document.getElementById('app');
+    app.classList.add('hidden'); app.classList.remove('flex');
+    document.getElementById('authScreen').classList.add('hidden');
+    obStep = 1;
+    obSelectedCurrency = displayCurrency || 'RUB';
+    renderObCurrencyGrid();
+    document.getElementById('obSalarySymbol').textContent = CURRENCIES[obSelectedCurrency].symbol;
+    document.getElementById('obBudgetSymbol').textContent = CURRENCIES[obSelectedCurrency].symbol;
+    document.getElementById('obSalaryInput').value = '';
+    document.getElementById('obBudgetInput').value = '';
+    showObStep(1);
+    const onb = document.getElementById('onboardingScreen');
+    onb.classList.remove('hidden'); onb.classList.add('flex');
+  }
+  function renderObDots() {
+    document.getElementById('obDots').innerHTML = [1, 2, 3].map(n =>
+      `<span class="h-1.5 rounded-full transition-all ${n === obStep ? 'w-6 bg-white' : 'w-1.5 bg-white/20'}"></span>`
+    ).join('');
+  }
+  function renderObCurrencyGrid() {
+    document.getElementById('obCurrencyGrid').innerHTML = Object.keys(CURRENCIES).map(cur => {
+      const active = cur === obSelectedCurrency;
+      return `<button type="button" onclick="selectObCurrency('${cur}')" class="flex flex-col items-center justify-center gap-1 py-4 rounded-2xl transition-colors ${active ? 'bg-[#0A84FF] text-white' : 'bg-white/5 text-[#8E8E93]'}">
+        <span class="text-xl font-bold">${CURRENCIES[cur].symbol}</span>
+        <span class="text-xs font-medium">${cur}</span>
+      </button>`;
+    }).join('');
+  }
+  function selectObCurrency(cur) {
+    obSelectedCurrency = cur;
+    renderObCurrencyGrid();
+    document.getElementById('obSalarySymbol').textContent = CURRENCIES[cur].symbol;
+    document.getElementById('obBudgetSymbol').textContent = CURRENCIES[cur].symbol;
+  }
+  function showObStep(n) {
+    obStep = n;
+    [1, 2, 3].forEach(i => document.getElementById('obStep' + i).classList.toggle('hidden', i !== n));
+    document.getElementById('obBackBtn').classList.toggle('hidden', n === 1);
+    document.getElementById('obSkipBtn').classList.toggle('hidden', n !== 2);
+    document.getElementById('obNextBtn').textContent = n === 3 ? 'Начать' : 'Далее';
+    renderObDots();
+  }
+  async function obNextStep() {
+    if (obStep === 1) {
+      if (!obSelectedCurrency) { showToast('Выберите валюту', { error: true }); return; }
+      showObStep(2);
+    } else if (obStep === 2) {
+      showObStep(3);
+    } else {
+      await finishOnboarding();
+    }
+  }
+  function obPrevStep() { if (obStep > 1) showObStep(obStep - 1); }
+  function obSkipStep() { showObStep(3); }
+  async function finishOnboarding() {
+    displayCurrency = obSelectedCurrency || 'RUB';
+    localStorage.setItem('piggy_currency', displayCurrency);
+    const salaryEntered = parseFloat(document.getElementById('obSalaryInput').value) || 0;
+    const budgetEntered = parseFloat(document.getElementById('obBudgetInput').value) || 0;
+    userSalary = salaryEntered ? convert(salaryEntered, displayCurrency, 'RUB') : 0;
+    userSalaryCurrency = displayCurrency;
+    userMonthlyBudget = budgetEntered ? convert(budgetEntered, displayCurrency, 'RUB') : 0;
+    if (currentUser) {
+      try {
+        await sb.from('profiles').update({
+          display_currency: displayCurrency,
+          salary: userSalary,
+          salary_currency: userSalaryCurrency,
+          monthly_budget: userMonthlyBudget,
+        }).eq('id', currentUser.id);
+      } catch (e) { /* онбординг всё равно завершаем локально */ }
+      localStorage.setItem('piggy_onboarded_' + currentUser.id, '1');
+    }
+    renderCurrencySelector();
+    updateRatesUI();
+    renderAll();
+    renderBudgetWidget();
+    showApp();
+    switchTab('home');
   }
 
   // ---------- Settings (salary) ----------
@@ -1859,7 +1948,7 @@
 
   // ---------- Init ----------
   function init() {
-    ['amountInput', 'goalTargetInput', 'topUpAmountInput'].forEach(id => document.getElementById(id).addEventListener('input', sanitizeAmountInput));
+    ['amountInput', 'goalTargetInput', 'topUpAmountInput', 'obSalaryInput', 'obBudgetInput'].forEach(id => document.getElementById(id).addEventListener('input', sanitizeAmountInput));
     document.getElementById('amountInput').addEventListener('input', updateSaveButtonState);
     document.getElementById('receiptInput').addEventListener('change', handleReceiptFile);
     document.getElementById('fabButton').addEventListener('click', () => { currentTab === 'goals' ? openGoalSheet() : openAddSheet(); });
