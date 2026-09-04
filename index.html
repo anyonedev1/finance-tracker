@@ -110,6 +110,64 @@
     </form>
   </div>
 
+  <!-- ONBOARDING (первичная настройка перед использованием) -->
+  <div id="onboardingScreen" class="fixed inset-0 z-[95] hidden flex-col bg-black">
+    <div class="absolute -top-24 -right-16 w-80 h-80 rounded-full bg-[#FFD60A]/10 blur-3xl pointer-events-none"></div>
+    <div class="safe-top px-6 pt-2 pb-4 flex items-center gap-2 shrink-0">
+      <div id="obDots" class="flex gap-1.5"></div>
+    </div>
+    <div class="flex-1 overflow-y-auto px-6 relative">
+
+      <!-- Step 1: currency -->
+      <div id="obStep1" class="ob-step">
+        <p class="text-4xl mb-3">💱</p>
+        <h2 class="text-2xl font-bold mb-1.5">Выберите вашу валюту</h2>
+        <p class="text-sm text-[#8E8E93] mb-6">Все суммы будут отображаться в ней. Поменять можно в любой момент в профиле.</p>
+        <div id="obCurrencyGrid" class="grid grid-cols-2 gap-3"></div>
+      </div>
+
+      <!-- Step 2: salary & budget -->
+      <div id="obStep2" class="ob-step hidden">
+        <p class="text-4xl mb-3">💼</p>
+        <h2 class="text-2xl font-bold mb-1.5">Зарплата и бюджет</h2>
+        <p class="text-sm text-[#8E8E93] mb-6">Необязательно — но так копилка сможет считать, сколько можно тратить в день. Можно пропустить и заполнить позже.</p>
+        <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide mb-2">Зарплата в месяц</p>
+        <div class="flex items-center gap-2 bg-white/5 rounded-2xl px-4 py-4 mb-4 focus-within:ring-2 focus-within:ring-[#0A84FF]/40">
+          <input id="obSalaryInput" type="text" inputmode="decimal" placeholder="0" class="flex-1 bg-transparent text-lg outline-none">
+          <span id="obSalarySymbol" class="text-[#8E8E93] text-sm">₽</span>
+        </div>
+        <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide mb-2">Бюджет на расходы в месяц</p>
+        <div class="flex items-center gap-2 bg-white/5 rounded-2xl px-4 py-4 mb-2 focus-within:ring-2 focus-within:ring-[#0A84FF]/40">
+          <input id="obBudgetInput" type="text" inputmode="decimal" placeholder="0 — без лимита" class="flex-1 bg-transparent text-lg outline-none">
+          <span id="obBudgetSymbol" class="text-[#8E8E93] text-sm">₽</span>
+        </div>
+      </div>
+
+      <!-- Step 3: done -->
+      <div id="obStep3" class="ob-step hidden text-center pt-6">
+        <p class="text-5xl mb-3">🎉</p>
+        <h2 class="text-2xl font-bold mb-1.5">Готово!</h2>
+        <p class="text-sm text-[#8E8E93] mb-6 px-2">Копилка настроена. Валюту, зарплату и бюджет всегда можно изменить во вкладке «Профиль».</p>
+        <div class="bg-white/5 rounded-2xl p-4 text-left space-y-2">
+          <p class="text-sm flex items-center gap-2"><span class="text-[#30D158]">✓</span> Учёт доходов и расходов по категориям</p>
+          <p class="text-sm flex items-center gap-2"><span class="text-[#30D158]">✓</span> Цели накоплений с прогрессом</p>
+          <p class="text-sm flex items-center gap-2"><span class="text-[#30D158]">✓</span> Сканер чеков и ИИ-советник</p>
+          <p class="text-sm flex items-center gap-2"><span class="text-[#30D158]">✓</span> Общий семейный бюджет по коду</p>
+        </div>
+      </div>
+    </div>
+    <!-- нижняя панель — специально пониже, чтобы было легко нажимать большим пальцем -->
+    <div class="safe-bottom px-6 pt-3 shrink-0 bg-black/80 backdrop-blur-xl border-t border-white/5">
+      <div class="flex gap-3">
+        <button id="obBackBtn" onclick="obPrevStep()" class="hidden w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center active:scale-95 transition-transform shrink-0">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+        </button>
+        <button id="obNextBtn" onclick="obNextStep()" class="flex-1 h-14 rounded-2xl bg-[#0A84FF] active:scale-[0.98] transition-all font-semibold text-[17px]">Далее</button>
+      </div>
+      <button id="obSkipBtn" onclick="obSkipStep()" class="hidden w-full text-center text-sm text-[#8E8E93] py-4">Пропустить этот шаг</button>
+    </div>
+  </div>
+
   <div id="app" class="max-w-md mx-auto min-h-screen flex-col relative z-10 hidden">
     <header class="safe-top px-5 pt-3 pb-1 flex items-start justify-between gap-3">
       <div>
@@ -117,9 +175,6 @@
         <p class="text-sm text-[#8E8E93] -mt-0.5">Умный трекер расходов</p>
       </div>
       <div class="flex gap-2 shrink-0">
-        <button id="settingsBtn" onclick="openSettingsSheet()" class="w-9 h-9 mt-1 rounded-full bg-white/5 flex items-center justify-center active:scale-90 transition-transform">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        </button>
         <button id="changelogBtn" onclick="openChangelog()" class="relative w-9 h-9 mt-1 rounded-full bg-white/5 flex items-center justify-center active:scale-90 transition-transform">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
           <span id="changelogDot" class="hidden absolute top-1 right-1 w-2 h-2 rounded-full bg-[#FF453A]"></span>
@@ -261,26 +316,108 @@
         </button>
       </section>
 
+      <!-- PROFILE TAB -->
+      <section id="tabProfile" class="hidden">
+        <div class="rounded-3xl p-5 mb-5 relative overflow-hidden flex items-center gap-4" style="background:linear-gradient(135deg,#1c1c1e,#232325)">
+          <div id="profileAvatar" class="w-16 h-16 rounded-full bg-[#0A84FF] flex items-center justify-center text-2xl font-bold shrink-0">?</div>
+          <div class="min-w-0">
+            <p id="profileEmail" class="font-semibold text-[16px] truncate">—</p>
+            <p id="profileSince" class="text-xs text-[#8E8E93] mt-0.5">—</p>
+            <p id="profilePremiumBadge" class="hidden text-[11px] font-semibold text-[#FFD60A] mt-1">👑 Premium</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2.5 mb-5">
+          <div class="bg-[#1c1c1e] rounded-2xl p-3 text-center">
+            <p id="profileStatSaved" class="text-[15px] font-bold truncate">0</p>
+            <p class="text-[10px] text-[#8E8E93] mt-0.5">Накоплено</p>
+          </div>
+          <div class="bg-[#1c1c1e] rounded-2xl p-3 text-center">
+            <p id="profileStatGoals" class="text-[15px] font-bold truncate">0</p>
+            <p class="text-[10px] text-[#8E8E93] mt-0.5">Целей готово</p>
+          </div>
+          <div class="bg-[#1c1c1e] rounded-2xl p-3 text-center">
+            <p id="profileStatTx" class="text-[15px] font-bold truncate">0</p>
+            <p class="text-[10px] text-[#8E8E93] mt-0.5">Операций</p>
+          </div>
+        </div>
+
+        <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide mb-2">Валюта отображения</p>
+        <div id="profileCurrencySelector" class="grid grid-cols-4 gap-2 mb-5"></div>
+
+        <!-- СЕМЕЙНЫЙ ДОСТУП -->
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide">Семейный доступ</p>
+          <span id="familyMemberCount" class="text-[11px] text-[#8E8E93]"></span>
+        </div>
+        <div class="bg-[#1c1c1e] rounded-2xl p-4 mb-5">
+          <div id="familyMembersList" class="flex flex-col gap-2 mb-3"></div>
+          <div class="bg-white/5 rounded-xl px-4 py-3 mb-2">
+            <p class="text-[11px] text-[#8E8E93] mb-1">Код приглашения — дайте его члену семьи</p>
+            <div class="flex items-center gap-2">
+              <p id="profileHouseholdCode" class="flex-1 font-mono text-lg tracking-widest">------</p>
+              <button onclick="copyInviteCode()" class="text-[#0A84FF] text-sm font-semibold shrink-0">Копировать</button>
+            </div>
+          </div>
+          <div class="flex gap-2 mb-2">
+            <input id="profileJoinCodeInput" type="text" placeholder="Код от родственника" class="flex-1 bg-white/5 rounded-xl px-4 py-3 outline-none text-sm uppercase">
+            <button onclick="joinHousehold('profileJoinCodeInput')" class="bg-white/10 rounded-xl px-4 text-sm font-semibold shrink-0">Войти</button>
+          </div>
+          <button id="leaveHouseholdBtn" onclick="leaveHousehold()" class="hidden w-full text-center text-sm text-[#FF453A] py-2.5">Покинуть эту семью</button>
+        </div>
+
+        <!-- крупные, легко нажимаемые пункты меню -->
+        <div class="flex flex-col gap-2.5 mb-5">
+          <button onclick="openSettingsSheet()" class="w-full flex items-center gap-3 bg-[#1c1c1e] rounded-2xl px-4 py-4 active:scale-[0.98] transition-transform">
+            <span class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-lg shrink-0">⚙️</span>
+            <span class="flex-1 text-left font-medium text-[15px]">Настройки</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
+          <button onclick="openRecurringSheet()" class="w-full flex items-center gap-3 bg-[#1c1c1e] rounded-2xl px-4 py-4 active:scale-[0.98] transition-transform">
+            <span class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-lg shrink-0">🔁</span>
+            <span class="flex-1 text-left font-medium text-[15px]">Регулярные платежи</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
+          <button onclick="openPremiumSheet()" class="w-full flex items-center gap-3 bg-[#1c1c1e] rounded-2xl px-4 py-4 active:scale-[0.98] transition-transform">
+            <span class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-lg shrink-0">👑</span>
+            <span class="flex-1 text-left font-medium text-[15px]">Копилка Premium</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
+          <button onclick="openChangelog()" class="w-full flex items-center gap-3 bg-[#1c1c1e] rounded-2xl px-4 py-4 active:scale-[0.98] transition-transform">
+            <span class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-lg shrink-0">📋</span>
+            <span class="flex-1 text-left font-medium text-[15px]">Что нового</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
+        </div>
+
+        <!-- кнопка выхода — намеренно внизу экрана, чтобы легко было нажать одной рукой -->
+        <button onclick="handleLogout()" class="w-full bg-white/5 text-[#FF453A] active:scale-[0.98] transition-all rounded-2xl py-4 font-semibold text-[15px] mb-4">Выйти из аккаунта</button>
+      </section>
+
     </main>
 
     <!-- FAB -->
     <button id="fabButton" class="fixed right-5 bottom-24 w-14 h-14 rounded-full bg-[#0A84FF] shadow-lg shadow-blue-500/30 flex items-center justify-center text-3xl font-light active:scale-90 transition-transform z-30">＋</button>
 
-    <!-- BOTTOM NAV -->
+    <!-- BOTTOM NAV — кнопки крупные, растянуты во всю ширину, легко нажимать большим пальцем -->
     <nav class="fixed bottom-0 inset-x-0 z-20">
       <div class="max-w-md mx-auto bg-[#1c1c1e]/85 backdrop-blur-xl border-t border-white/10 flex relative safe-bottom">
-        <div id="navIndicator" class="absolute top-1.5 left-0 h-[3px] w-1/3 rounded-full bg-[#0A84FF] transition-transform duration-300 ease-out" style="transform:translateX(0%)"></div>
-        <button class="nav-btn flex-1 flex flex-col items-center py-2.5 gap-1 text-[#0A84FF] active:opacity-60 transition-opacity" data-tab="home" onclick="switchTab('home')">
+        <div id="navIndicator" class="absolute top-1.5 left-0 h-[3px] w-1/4 rounded-full bg-[#0A84FF] transition-transform duration-300 ease-out" style="transform:translateX(0%)"></div>
+        <button class="nav-btn flex-1 flex flex-col items-center py-3 gap-1 text-[#0A84FF] active:opacity-60 transition-opacity" data-tab="home" onclick="switchTab('home')">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1H9a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1h2.5a1 1 0 0 0 1-1v-9"/></svg>
           <span class="text-[10px] font-medium">Главная</span>
         </button>
-        <button class="nav-btn flex-1 flex flex-col items-center py-2.5 gap-1 text-[#8E8E93] active:opacity-60 transition-opacity" data-tab="goals" onclick="switchTab('goals')">
+        <button class="nav-btn flex-1 flex flex-col items-center py-3 gap-1 text-[#8E8E93] active:opacity-60 transition-opacity" data-tab="goals" onclick="switchTab('goals')">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.3"/><circle cx="12" cy="12" r="4.8"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>
           <span class="text-[10px] font-medium">Цели</span>
         </button>
-        <button class="nav-btn flex-1 flex flex-col items-center py-2.5 gap-1 text-[#8E8E93] active:opacity-60 transition-opacity" data-tab="analytics" onclick="switchTab('analytics')">
+        <button class="nav-btn flex-1 flex flex-col items-center py-3 gap-1 text-[#8E8E93] active:opacity-60 transition-opacity" data-tab="analytics" onclick="switchTab('analytics')">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>
           <span class="text-[10px] font-medium">Аналитика</span>
+        </button>
+        <button class="nav-btn flex-1 flex flex-col items-center py-3 gap-1 text-[#8E8E93] active:opacity-60 transition-opacity" data-tab="profile" onclick="switchTab('profile')">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.4-3.6 4.4-5.5 7.5-5.5s6.1 1.9 7.5 5.5"/></svg>
+          <span class="text-[10px] font-medium">Профиль</span>
         </button>
       </div>
     </nav>
@@ -314,11 +451,10 @@
         <div id="receiptConfirm" class="hidden bg-white/5 border border-[#0A84FF]/30 rounded-2xl p-4 mb-3">
           <p class="text-xs text-[#8E8E93] mb-2">ИИ распознал:</p>
           <p id="receiptConfirmText" class="text-sm mb-3 leading-relaxed"></p>
-          <div class="flex gap-2 mb-2">
+          <div class="flex gap-2">
             <button type="button" onclick="confirmReceipt(true)" class="flex-1 bg-[#30D158] text-black rounded-xl py-2.5 font-semibold text-sm active:scale-95 transition-transform">Да, верно</button>
             <button type="button" onclick="confirmReceipt(false)" class="flex-1 bg-white/10 rounded-xl py-2.5 font-semibold text-sm active:scale-95 transition-transform">Введу сам</button>
           </div>
-          <button type="button" onclick="addMoreReceiptPhoto()" class="w-full text-center text-xs text-[#0A84FF] py-1">📷 Чек не поместился — доснять ещё часть</button>
         </div>
 
         <div class="relative flex bg-white/5 rounded-full p-1 mt-4 mb-6">
@@ -462,7 +598,7 @@
         </div>
         <div class="flex gap-2 mb-5">
           <input id="joinCodeInput" type="text" placeholder="Ввести код и присоединиться" class="flex-1 bg-white/5 rounded-xl px-4 py-3 outline-none text-sm uppercase">
-          <button onclick="joinHousehold()" class="bg-white/10 rounded-xl px-4 text-sm font-semibold">Войти</button>
+          <button onclick="joinHousehold('joinCodeInput')" class="bg-white/10 rounded-xl px-4 text-sm font-semibold">Войти</button>
         </div>
         <button onclick="saveSalary()" class="w-full bg-[#0A84FF] active:scale-[0.98] transition-all rounded-2xl py-4 font-semibold text-[17px] mb-3">Сохранить</button>
         <button onclick="handleLogout()" class="w-full bg-white/5 text-[#FF453A] active:scale-[0.98] transition-all rounded-2xl py-3.5 font-semibold text-[15px]">Выйти из аккаунта</button>
@@ -591,6 +727,15 @@
 
   // ---------- Changelog ----------
   const CHANGELOG = [
+    { version: '3.2', date: '02.09.2026', items: [
+      'Вкладка «Профиль» теперь реально работает: показывает вашу почту, дату регистрации, сколько накоплено, сколько целей закрыто и сколько всего операций',
+      'В профиле появился блок «Семейный доступ»: список участников семьи, свой код приглашения и кнопка «Покинуть семью»',
+      'Присоединение к чужой семье по коду теперь предупреждает, что своя история операций останется в старой семье, и просит подтверждение',
+      'Копирование кода приглашения теперь работает и в браузерах без доступа к системному буферу обмена',
+    ]},
+    { version: '3.1', date: '02.09.2026', items: [
+      'Исправлен онбординг: экран настройки валюты и бюджета для новых пользователей теперь действительно открывается после входа (раньше вход через Google из-за этого срывался обратно на экран логина)',
+    ]},
     { version: '3.0', date: '30.08.2026', items: [
       'Сканер чеков теперь может сразу включать камеру (не только выбор фото из галереи)',
       'Автоопределение валюты чека по магазину: Green → BYN, Магнит → RUB. Если магазин не распознан, текущая выбранная валюта (например, BYN) больше не сбрасывается на RUB',
@@ -652,9 +797,20 @@
   }
 
   let currentHousehold = null; // { id, name, invite_code, owner_id }
+  let userProfile = null;
+  let householdMembers = []; // профили всех, у кого household_id === currentHousehold.id
+  function genInviteCode() {
+    const chars = 'abcdefghijkmnpqrstuvwxyz23456789';
+    let out = '';
+    for (let i = 0; i < 6; i++) out += chars[Math.floor(Math.random() * chars.length)];
+    return out;
+  }
+  // Возвращает true, если для пользователя только что была создана новая семья
+  // (то есть это действительно новый аккаунт и нужно показать онбординг).
   async function loadUserData(userId) {
     const profileRes = await sb.from('profiles').select('*').eq('id', userId).single();
-    const hhId = profileRes.data ? profileRes.data.household_id : null;
+    userProfile = profileRes.data || null;
+    let hhId = profileRes.data ? profileRes.data.household_id : null;
     userSalary = profileRes.data ? Number(profileRes.data.salary) || 0 : 0;
     userSalaryCurrency = profileRes.data ? profileRes.data.salary_currency || 'RUB' : 'RUB';
     userIsPremium = profileRes.data ? !!profileRes.data.is_premium : false;
@@ -663,40 +819,155 @@
     if (profileRes.data && profileRes.data.display_currency) { displayCurrency = profileRes.data.display_currency; }
     updatePremiumBadge();
 
-    if (!hhId) { transactions = []; goals = []; recurringPayments = []; return; }
+    let isNewHousehold = false;
+    if (!hhId) {
+      // БАГФИКС: раньше у новых пользователей не было семьи вообще,
+      // и добавить операцию/цель было невозможно. Теперь создаём её автоматически.
+      try {
+        const { data: newHh, error: hhCreateErr } = await sb.from('households')
+          .insert({ owner_id: userId, invite_code: genInviteCode() }).select().single();
+        if (newHh && !hhCreateErr) {
+          hhId = newHh.id;
+          isNewHousehold = true;
+          await sb.from('profiles').update({ household_id: hhId }).eq('id', userId);
+        }
+      } catch (e) { /* созданная семья не критична для чтения профиля */ }
+    }
+    if (!hhId) { transactions = []; goals = []; recurringPayments = []; currentHousehold = null; householdMembers = []; return isNewHousehold; }
 
-    const [txRes, goalsRes, hhRes, recRes] = await Promise.all([
+    const [txRes, goalsRes, hhRes, recRes, membersRes] = await Promise.all([
       sb.from('transactions').select('*').eq('household_id', hhId).order('created_at', { ascending: false }),
       sb.from('goals').select('*').eq('household_id', hhId).order('created_at', { ascending: true }),
       sb.from('households').select('*').eq('id', hhId).single(),
       sb.from('recurring_payments').select('*').eq('household_id', hhId).order('day_of_month', { ascending: true }),
+      sb.from('profiles').select('id, email, household_id').eq('household_id', hhId),
     ]);
     transactions = (txRes.data || []).map(t => ({ id: t.id, type: t.type, category: t.category, amount: Number(t.amount), entryAmount: Number(t.entry_amount), entryCurrency: t.entry_currency, comment: t.comment, isSaving: t.is_saving, date: new Date(t.created_at).getTime() }));
     goals = (goalsRes.data || []).map(g => ({ id: g.id, name: g.name, target: Number(g.target), collected: Number(g.collected), date: new Date(g.created_at).getTime() }));
     currentHousehold = hhRes.data || null;
     recurringPayments = recRes.data || [];
+    householdMembers = membersRes.data || [];
     await applyDueRecurringPayments();
+    return isNewHousehold;
   }
 
   sb.auth.onAuthStateChange(async (event, session) => {
     if (session && session.user) {
       currentUser = session.user;
       document.getElementById('authScreen').classList.add('hidden');
-      const app = document.getElementById('app');
-      app.classList.remove('hidden'); app.classList.add('flex');
-      await loadUserData(currentUser.id);
+      const isNewHousehold = await loadUserData(currentUser.id);
       renderCurrencySelector();
       setType('expense');
-      switchTab('home');
       updateRatesUI();
       renderAll();
+
+      const onboardedFlag = 'piggy_onboarded_' + currentUser.id;
+      const needsOnboarding = isNewHousehold || !localStorage.getItem(onboardedFlag);
+      if (needsOnboarding) {
+        openOnboarding();
+      } else {
+        showApp();
+        switchTab('home');
+      }
     } else {
       currentUser = null;
       document.getElementById('authScreen').classList.remove('hidden');
+      document.getElementById('onboardingScreen').classList.add('hidden');
       const app = document.getElementById('app');
       app.classList.add('hidden'); app.classList.remove('flex');
     }
   });
+  function showApp() {
+    document.getElementById('onboardingScreen').classList.add('hidden');
+    const app = document.getElementById('app');
+    app.classList.remove('hidden'); app.classList.add('flex');
+  }
+
+  // ---------- Onboarding (первичная настройка после регистрации/входа) ----------
+  let obStep = 1;
+  let obSelectedCurrency = null;
+
+  function openOnboarding() {
+    const app = document.getElementById('app');
+    app.classList.add('hidden'); app.classList.remove('flex');
+    document.getElementById('authScreen').classList.add('hidden');
+    obStep = 1;
+    obSelectedCurrency = displayCurrency || 'RUB';
+    renderObCurrencyGrid();
+    document.getElementById('obSalarySymbol').textContent = CURRENCIES[obSelectedCurrency].symbol;
+    document.getElementById('obBudgetSymbol').textContent = CURRENCIES[obSelectedCurrency].symbol;
+    document.getElementById('obSalaryInput').value = '';
+    document.getElementById('obBudgetInput').value = '';
+    showObStep(1);
+    const onb = document.getElementById('onboardingScreen');
+    onb.classList.remove('hidden'); onb.classList.add('flex');
+  }
+  function renderObDots() {
+    document.getElementById('obDots').innerHTML = [1, 2, 3].map(n =>
+      `<span class="h-1.5 rounded-full transition-all ${n === obStep ? 'w-6 bg-white' : 'w-1.5 bg-white/20'}"></span>`
+    ).join('');
+  }
+  function renderObCurrencyGrid() {
+    document.getElementById('obCurrencyGrid').innerHTML = Object.keys(CURRENCIES).map(cur => {
+      const active = cur === obSelectedCurrency;
+      return `<button type="button" onclick="selectObCurrency('${cur}')" class="flex flex-col items-center justify-center gap-1 py-4 rounded-2xl transition-colors ${active ? 'bg-[#0A84FF] text-white' : 'bg-white/5 text-[#8E8E93]'}">
+        <span class="text-xl font-bold">${CURRENCIES[cur].symbol}</span>
+        <span class="text-xs font-medium">${cur}</span>
+      </button>`;
+    }).join('');
+  }
+  function selectObCurrency(cur) {
+    obSelectedCurrency = cur;
+    renderObCurrencyGrid();
+    document.getElementById('obSalarySymbol').textContent = CURRENCIES[cur].symbol;
+    document.getElementById('obBudgetSymbol').textContent = CURRENCIES[cur].symbol;
+  }
+  function showObStep(n) {
+    obStep = n;
+    [1, 2, 3].forEach(i => document.getElementById('obStep' + i).classList.toggle('hidden', i !== n));
+    document.getElementById('obBackBtn').classList.toggle('hidden', n === 1);
+    document.getElementById('obSkipBtn').classList.toggle('hidden', n !== 2);
+    document.getElementById('obNextBtn').textContent = n === 3 ? 'Начать' : 'Далее';
+    renderObDots();
+  }
+  async function obNextStep() {
+    if (obStep === 1) {
+      if (!obSelectedCurrency) { showToast('Выберите валюту', { error: true }); return; }
+      showObStep(2);
+    } else if (obStep === 2) {
+      showObStep(3);
+    } else {
+      await finishOnboarding();
+    }
+  }
+  function obPrevStep() { if (obStep > 1) showObStep(obStep - 1); }
+  function obSkipStep() { showObStep(3); }
+  async function finishOnboarding() {
+    displayCurrency = obSelectedCurrency || 'RUB';
+    localStorage.setItem('piggy_currency', displayCurrency);
+    const salaryEntered = parseFloat(document.getElementById('obSalaryInput').value) || 0;
+    const budgetEntered = parseFloat(document.getElementById('obBudgetInput').value) || 0;
+    userSalary = salaryEntered ? convert(salaryEntered, displayCurrency, 'RUB') : 0;
+    userSalaryCurrency = displayCurrency;
+    userMonthlyBudget = budgetEntered ? convert(budgetEntered, displayCurrency, 'RUB') : 0;
+    if (currentUser) {
+      try {
+        await sb.from('profiles').update({
+          display_currency: displayCurrency,
+          salary: userSalary,
+          salary_currency: userSalaryCurrency,
+          monthly_budget: userMonthlyBudget,
+        }).eq('id', currentUser.id);
+      } catch (e) { /* онбординг всё равно завершаем локально */ }
+      localStorage.setItem('piggy_onboarded_' + currentUser.id, '1');
+    }
+    renderCurrencySelector();
+    updateRatesUI();
+    renderAll();
+    renderBudgetWidget();
+    showApp();
+    switchTab('home');
+  }
 
   // ---------- Settings (salary) ----------
   let userSalary = 0;
@@ -774,9 +1045,12 @@
   }
   function updatePremiumBadge() {
     const btn = document.getElementById('settingsBtn');
-    if (!btn) return;
-    btn.classList.toggle('ring-2', userIsPremium);
-    btn.classList.toggle('ring-[#FFD60A]/60', userIsPremium);
+    if (btn) {
+      btn.classList.toggle('ring-2', userIsPremium);
+      btn.classList.toggle('ring-[#FFD60A]/60', userIsPremium);
+    }
+    const badge = document.getElementById('profilePremiumBadge');
+    if (badge) badge.classList.toggle('hidden', !userIsPremium);
   }
   function openPremiumSheet() { openSheet('premiumSheet'); }
   async function requestPremium() {
@@ -802,18 +1076,64 @@
   }
   function copyInviteCode() {
     if (!currentHousehold) return;
-    navigator.clipboard?.writeText(currentHousehold.invite_code);
-    showToast('Код скопирован — отправьте его члену семьи');
+    const code = currentHousehold.invite_code;
+    const done = () => showToast('Код скопирован — отправьте его члену семьи');
+    const fallback = () => {
+      // Фолбэк для браузеров/контекстов без доступа к navigator.clipboard (например iOS в некоторых WebView)
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = code;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.focus(); ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        done();
+      } catch (e) {
+        showToast('Код: ' + code + ' (скопируйте вручную)', { error: true });
+      }
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(code).then(done).catch(fallback);
+    } else {
+      fallback();
+    }
   }
-  async function joinHousehold() {
-    const code = document.getElementById('joinCodeInput').value.trim().toLowerCase();
+  async function joinHousehold(inputId) {
+    const inputEl = document.getElementById(inputId || 'joinCodeInput');
+    const code = inputEl.value.trim().toLowerCase();
     if (!code) return;
+    if (currentHousehold && code === currentHousehold.invite_code) { showToast('Это и есть ваш текущий код'); return; }
     const { data: hh, error } = await sb.from('households').select('*').eq('invite_code', code).single();
     if (error || !hh) { showToast('Код не найден', { error: true }); return; }
-    await sb.from('profiles').update({ household_id: hh.id }).eq('id', currentUser.id);
+    const ownHouseholdHasData = currentHousehold && !currentHousehold.owner_id !== currentUser.id
+      ? false
+      : (currentHousehold && currentHousehold.owner_id === currentUser.id && (transactions.length > 0 || goals.length > 0));
+    const warnText = ownHouseholdHasData
+      ? 'Вы владелец текущей семьи, в которой уже есть операции или цели. После перехода в новую семью эти данные останутся в старой семье и перестанут отображаться в приложении (доступ к ним не будет потерян окончательно, но вы их не увидите, пока не вернётесь). Присоединиться?'
+      : 'Вы перейдёте в другую семью, ваш текущий код приглашения перестанет быть вашим "домом" по умолчанию. Продолжить?';
+    if (!confirm(warnText)) return;
+    const { error: updErr } = await sb.from('profiles').update({ household_id: hh.id }).eq('id', currentUser.id);
+    if (updErr) { showToast('Не удалось присоединиться: ' + updErr.message, { error: true }); return; }
     showToast('Вы присоединились к семье! Перезагружаю…');
     setTimeout(() => location.reload(), 1000);
   }
+  async function leaveHousehold() {
+    if (!currentUser || !currentHousehold) return;
+    if (currentHousehold.owner_id === currentUser.id) {
+      showToast('Вы владелец этой семьи — сначала передайте её или удалите через поддержку', { error: true });
+      return;
+    }
+    if (!confirm('Покинуть эту семью? Вам будет создана новая личная копилка, доступ к текущим операциям и целям семьи вы потеряете.')) return;
+    const { data: newHh, error: hhErr } = await sb.from('households').insert({ owner_id: currentUser.id, invite_code: genInviteCode() }).select().single();
+    if (hhErr || !newHh) { showToast('Не удалось создать новую копилку: ' + (hhErr ? hhErr.message : ''), { error: true }); return; }
+    const { error: updErr } = await sb.from('profiles').update({ household_id: newHh.id }).eq('id', currentUser.id);
+    if (updErr) { showToast('Не удалось выйти из семьи: ' + updErr.message, { error: true }); return; }
+    showToast('Вы вышли из семьи. Перезагружаю…');
+    setTimeout(() => location.reload(), 1000);
+  }
+
   async function saveSalary() {
     const entered = parseFloat(document.getElementById('salaryInput').value) || 0;
     userSalary = convert(entered, displayCurrency, 'RUB');
@@ -872,7 +1192,7 @@
   let ratesUpdatedAt = null;
   let rateTrend = {};
 
-  const TAB_IDS = { home: 'tabHome', goals: 'tabGoals', analytics: 'tabAnalytics' };
+  const TAB_IDS = { home: 'tabHome', goals: 'tabGoals', analytics: 'tabAnalytics', profile: 'tabProfile' };
 
   // ---------- Persistence ----------
   function persist() { /* запись идёт напрямую в Supabase в местах мутаций ниже */ }
@@ -920,6 +1240,10 @@
     const h = Math.round(min / 60);
     if (h < 24) return h + ' ч назад';
     return Math.round(h / 24) + ' дн назад';
+  }
+  function formatDateShort(ts) {
+    if (!ts) return '';
+    return new Date(ts).toLocaleDateString('ru-RU', { day: '2-digit', month: 'long', year: 'numeric' });
   }
   function sanitizeAmountInput(e) {
     let v = e.target.value.replace(/[^0-9.,]/g, '').replace(',', '.');
@@ -999,16 +1323,19 @@
   }
 
   // ---------- Rendering ----------
-  function renderAll() { renderBalance(); renderTransactions(); renderGoals(); renderAnalytics(); renderBudgetWidget(); }
+  function renderAll() { renderBalance(); renderTransactions(); renderGoals(); renderAnalytics(); renderBudgetWidget(); renderProfile(); }
 
   function renderCurrencySelector() {
-    document.getElementById('currencySelector').innerHTML = Object.keys(CURRENCIES).map(cur => {
+    const html = Object.keys(CURRENCIES).map(cur => {
       const active = cur === displayCurrency;
       return `<button data-cur="${cur}" onclick="setDisplayCurrency('${cur}')" class="cur-chip flex flex-col items-center justify-center gap-0.5 py-2.5 rounded-2xl transition-colors ${active ? 'bg-[#0A84FF] text-white' : 'bg-white/5 text-[#8E8E93]'}">
         <span class="text-base font-bold">${CURRENCIES[cur].symbol}</span>
         <span class="text-[10px] font-medium">${cur}</span>
       </button>`;
     }).join('');
+    document.getElementById('currencySelector').innerHTML = html;
+    const profileSel = document.getElementById('profileCurrencySelector');
+    if (profileSel) profileSel.innerHTML = html.replace(/cur-chip/g, 'cur-chip profile-cur-chip');
   }
   async function setDisplayCurrency(cur) {
     if (cur === displayCurrency) return;
@@ -1164,6 +1491,70 @@
     }).join('');
   }
 
+  // ---------- Profile ----------
+  function renderProfile() {
+    if (!currentUser) return;
+    const email = currentUser.email || '—';
+    const emailEl = document.getElementById('profileEmail');
+    if (emailEl) emailEl.textContent = email;
+    const avatarEl = document.getElementById('profileAvatar');
+    if (avatarEl) avatarEl.textContent = (email[0] || '?').toUpperCase();
+    const sinceEl = document.getElementById('profileSince');
+    if (sinceEl) {
+      const createdAt = currentUser.created_at ? formatDateShort(new Date(currentUser.created_at).getTime()) : null;
+      sinceEl.textContent = createdAt ? ('В Копилке с ' + createdAt) : '—';
+    }
+    updatePremiumBadge();
+
+    const totalSaved = transactions.filter(t => t.isSaving).reduce((s, t) => s + t.amount, 0);
+    const statSaved = document.getElementById('profileStatSaved');
+    if (statSaved) statSaved.textContent = fmDisplay(totalSaved);
+    const statGoals = document.getElementById('profileStatGoals');
+    if (statGoals) statGoals.textContent = String(goals.filter(g => g.collected >= g.target && g.target > 0).length);
+    const statTx = document.getElementById('profileStatTx');
+    if (statTx) statTx.textContent = String(transactions.length);
+
+    renderFamilySection();
+  }
+
+  function renderFamilySection() {
+    const codeEl = document.getElementById('profileHouseholdCode');
+    if (codeEl) codeEl.textContent = currentHousehold ? currentHousehold.invite_code : '------';
+
+    const countEl = document.getElementById('familyMemberCount');
+    if (countEl) countEl.textContent = householdMembers.length ? `${householdMembers.length} ${pluralizeMembers(householdMembers.length)}` : '';
+
+    const listEl = document.getElementById('familyMembersList');
+    if (listEl) {
+      if (!householdMembers.length) {
+        listEl.innerHTML = `<p class="text-sm text-[#8E8E93] py-1">Пока только вы</p>`;
+      } else {
+        listEl.innerHTML = householdMembers.map(m => {
+          const isYou = m.id === currentUser.id;
+          const isOwner = currentHousehold && currentHousehold.owner_id === m.id;
+          const mEmail = m.email || 'Участник';
+          return `<div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-full bg-[#0A84FF]/20 flex items-center justify-center text-xs font-bold shrink-0">${(mEmail[0] || '?').toUpperCase()}</div>
+            <p class="text-sm flex-1 truncate">${escapeHtml(mEmail)}${isYou ? ' <span class="text-[#8E8E93]">(вы)</span>' : ''}</p>
+            ${isOwner ? '<span class="text-[10px] text-[#FFD60A] font-semibold shrink-0">Владелец</span>' : ''}
+          </div>`;
+        }).join('');
+      }
+    }
+
+    const leaveBtn = document.getElementById('leaveHouseholdBtn');
+    if (leaveBtn) {
+      const canLeave = currentHousehold && currentHousehold.owner_id !== currentUser.id;
+      leaveBtn.classList.toggle('hidden', !canLeave);
+    }
+  }
+  function pluralizeMembers(n) {
+    const mod10 = n % 10, mod100 = n % 100;
+    if (mod10 === 1 && mod100 !== 11) return 'участник';
+    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return 'участника';
+    return 'участников';
+  }
+
   function exportCSV() {
     if (!transactions.length) { showToast('Нет операций для экспорта', { error: true }); return; }
     const header = 'Дата,Тип,Категория,Сумма (RUB),Комментарий\n';
@@ -1255,10 +1646,11 @@
       btn.classList.toggle('text-[#0A84FF]', active);
       btn.classList.toggle('text-[#8E8E93]', !active);
     });
-    const tabIndex = { home: 0, goals: 1, analytics: 2 }[tab] || 0;
+    const tabIndex = { home: 0, goals: 1, analytics: 2, profile: 3 }[tab] || 0;
     document.getElementById('navIndicator').style.transform = `translateX(${tabIndex * 100}%)`;
     if (tab === 'goals') renderGoals();
     if (tab === 'analytics') renderAnalytics();
+    if (tab === 'profile') renderProfile();
     if (tab === 'home') { renderBalance(); renderTransactions(); }
   }
 
@@ -1501,39 +1893,19 @@
     const el = document.getElementById('receiptStatusText');
     if (el) el.textContent = msg;
   }
-  let pendingReceiptImages = [];
-  let appendingReceiptPhoto = false;
-
   async function processReceiptImage(fileOrBlob) {
-    if (appendingReceiptPhoto) {
-      appendingReceiptPhoto = false;
-      const base64 = await fileToBase64(fileOrBlob);
-      pendingReceiptImages.push({ data: base64, mediaType: fileOrBlob.type || 'image/jpeg' });
-      await runReceiptAnalysis();
-      return;
-    }
-    pendingReceiptImages = [];
-    const base64 = await fileToBase64(fileOrBlob);
-    pendingReceiptImages.push({ data: base64, mediaType: fileOrBlob.type || 'image/jpeg' });
-    await runReceiptAnalysis();
-  }
-
-  function addMoreReceiptPhoto() {
-    appendingReceiptPhoto = true;
-    document.getElementById('receiptInput').click();
-  }
-
-  async function runReceiptAnalysis() {
     const statusEl = document.getElementById('receiptStatus');
     const confirmEl = document.getElementById('receiptConfirm');
     confirmEl.classList.add('hidden');
     statusEl.classList.remove('hidden'); statusEl.classList.add('flex');
-    setReceiptStatusText(pendingReceiptImages.length > 1 ? `ИИ смотрит на чек (${pendingReceiptImages.length} фото)…` : 'ИИ смотрит на чек…');
+    setReceiptStatusText('Загружаю фото…');
     try {
+      const base64 = await fileToBase64(fileOrBlob);
+      setReceiptStatusText('ИИ смотрит на чек…');
       const resp = await fetch('/api/scan-receipt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ images: pendingReceiptImages, householdId: currentHousehold?.id }),
+        body: JSON.stringify({ imageBase64: base64, mediaType: fileOrBlob.type || 'image/jpeg', householdId: currentHousehold?.id }),
       });
       const parsed = await resp.json();
       if (!resp.ok || parsed.error) throw new Error(parsed.error || 'Ошибка распознавания');
@@ -1548,7 +1920,6 @@
       if (parsed.confidence === 'high') {
         applyParsedToForm(parsed);
         showToast('⚡ ИИ уверен и заполнил всё сам — проверьте перед сохранением');
-        showReceiptItemsAdvice(parsed);
         pendingReceiptParsed = null;
         return;
       }
@@ -1569,12 +1940,6 @@
       statusEl.classList.add('hidden'); statusEl.classList.remove('flex');
       showToast('Не удалось распознать чек: ' + err.message, { error: true });
     }
-  }
-  function showReceiptItemsAdvice(parsed) {
-    if (!parsed.items?.length && !parsed.advice) return;
-    const itemsLine = parsed.items?.length ? `🧾 ${parsed.items.join(', ')}` : '';
-    const adviceLine = parsed.advice ? `💡 ${parsed.advice}` : '';
-    showToast([itemsLine, adviceLine].filter(Boolean).join(' — '));
   }
   function applyParsedToForm(parsed) {
     if (parsed.currency && CURRENCIES[parsed.currency] && parsed.currency !== selectedEntryCurrency) selectEntryCurrency(parsed.currency);
@@ -1625,7 +1990,6 @@
       return;
     }
     applyParsedToForm(pendingReceiptParsed);
-    showReceiptItemsAdvice(pendingReceiptParsed);
     pendingReceiptParsed = null;
     showToast('Заполнено, проверьте перед сохранением');
   }
@@ -1735,7 +2099,7 @@
 
   // ---------- Init ----------
   function init() {
-    ['amountInput', 'goalTargetInput', 'topUpAmountInput'].forEach(id => document.getElementById(id).addEventListener('input', sanitizeAmountInput));
+    ['amountInput', 'goalTargetInput', 'topUpAmountInput', 'obSalaryInput', 'obBudgetInput'].forEach(id => document.getElementById(id).addEventListener('input', sanitizeAmountInput));
     document.getElementById('amountInput').addEventListener('input', updateSaveButtonState);
     document.getElementById('receiptInput').addEventListener('change', handleReceiptFile);
     document.getElementById('fabButton').addEventListener('click', () => { currentTab === 'goals' ? openGoalSheet() : openAddSheet(); });
