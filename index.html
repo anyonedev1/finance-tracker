@@ -314,10 +314,11 @@
         <div id="receiptConfirm" class="hidden bg-white/5 border border-[#0A84FF]/30 rounded-2xl p-4 mb-3">
           <p class="text-xs text-[#8E8E93] mb-2">ИИ распознал:</p>
           <p id="receiptConfirmText" class="text-sm mb-3 leading-relaxed"></p>
-          <div class="flex gap-2">
+          <div class="flex gap-2 mb-2">
             <button type="button" onclick="confirmReceipt(true)" class="flex-1 bg-[#30D158] text-black rounded-xl py-2.5 font-semibold text-sm active:scale-95 transition-transform">Да, верно</button>
             <button type="button" onclick="confirmReceipt(false)" class="flex-1 bg-white/10 rounded-xl py-2.5 font-semibold text-sm active:scale-95 transition-transform">Введу сам</button>
           </div>
+          <button type="button" onclick="addMoreReceiptPhoto()" class="w-full text-center text-xs text-[#0A84FF] py-1">📷 Чек не поместился — доснять ещё часть</button>
         </div>
 
         <div class="relative flex bg-white/5 rounded-full p-1 mt-4 mb-6">
@@ -1624,6 +1625,7 @@
       return;
     }
     applyParsedToForm(pendingReceiptParsed);
+    showReceiptItemsAdvice(pendingReceiptParsed);
     pendingReceiptParsed = null;
     showToast('Заполнено, проверьте перед сохранением');
   }
