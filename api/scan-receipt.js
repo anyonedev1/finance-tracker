@@ -47,7 +47,7 @@ confidence: "high" только если уверен и в сумме, и в к
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts }],
-          generationConfig: { temperature: 0.1, maxOutputTokens: 500 },
+          generationConfig: { temperature: 0.1, maxOutputTokens: 600, responseMimeType: 'application/json' },
         }),
       }
     );
