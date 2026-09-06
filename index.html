@@ -21,6 +21,15 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
+  :root{
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    /* iPhone models with a Dynamic Island or notch report a large safe-area-inset-top
+       (~59px on Dynamic Island models, ~47-51px on notch models). We add a small extra
+       margin on top of that so the header clears the status bar AND the Dynamic Island /
+       camera housing comfortably, the way native iOS apps space their nav bar. */
+    --header-clearance: calc(var(--safe-top) + 8px);
+  }
   * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
   html, body { background:#000; height:100%; overscroll-behavior-y: none; }
   body {
@@ -38,10 +47,21 @@
   }
   input, textarea, select, button { font-family: inherit; font-size: 16px; }
   ::-webkit-scrollbar { display: none; }
-  .safe-top { padding-top: max(env(safe-area-inset-top), 18px); }
-  .safe-bottom { padding-bottom: max(env(safe-area-inset-bottom), 14px); }
+  .safe-top { padding-top: max(var(--header-clearance), 18px); }
+  .safe-bottom { padding-bottom: max(var(--safe-bottom), 14px); }
   .touch-none { touch-action: none; }
   input::placeholder { color:#8E8E93; }
+
+  /* iOS system type scale, used for consistent hierarchy across the new header/sheets */
+  .t-largetitle{ font-size:34px; font-weight:700; letter-spacing:-0.02em; }
+  .t-title1{ font-size:28px; font-weight:700; letter-spacing:-0.02em; }
+  .t-title2{ font-size:22px; font-weight:700; letter-spacing:-0.01em; }
+  .t-title3{ font-size:20px; font-weight:600; }
+  .t-headline{ font-size:17px; font-weight:600; }
+  .t-caption1{ font-size:12px; font-weight:500; }
+
+  .spring-tap{ transition: transform .15s cubic-bezier(.34,1.56,.64,1); }
+  .spring-tap:active{ transform: scale(.94); }
 
   @keyframes cardEnter { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
   .card-enter { animation: cardEnter .4s ease both; }
@@ -87,10 +107,10 @@
     <div class="absolute -bottom-24 -right-16 w-80 h-80 rounded-full bg-[#0A84FF]/20 blur-3xl"></div>
     <form id="authForm" class="relative w-full max-w-sm bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-3xl px-6 py-8 shadow-2xl" onsubmit="return handleAuthSubmit(event)">
       <p class="text-5xl text-center mb-2 float-slow">🐷</p>
-      <h1 class="text-2xl font-bold text-center mb-1">Копилка</h1>
+      <h1 class="t-title2 text-center mb-1">Копилка</h1>
       <p class="text-center text-xs text-[#8E8E93] mb-6">Твои финансы под контролем</p>
 
-      <button type="button" onclick="handleGoogleLogin()" class="w-full flex items-center justify-center gap-2.5 bg-white text-black rounded-2xl py-3.5 font-semibold text-[15px] active:scale-[0.98] transition-all mb-4">
+      <button type="button" onclick="handleGoogleLogin()" class="w-full flex items-center justify-center gap-2.5 bg-white text-black rounded-2xl py-3.5 font-semibold text-[15px] spring-tap mb-4">
         <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.9 32.6 29.4 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.4 6.1 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.9 19 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.4 6.1 29.5 4 24 4c-7.7 0-14.3 4.4-17.7 10.7z"/><path fill="#4CAF50" d="M24 44c5.3 0 10.1-2 13.7-5.4l-6.3-5.3C29.4 35.1 26.8 36 24 36c-5.3 0-9.8-3.4-11.4-8.1l-6.5 5C9.6 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.6l6.3 5.3C40.9 36 44 30.8 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>
         Войти через Google
       </button>
@@ -106,7 +126,7 @@
       <input id="authPassword" type="password" required minlength="6" placeholder="Пароль" autocomplete="current-password"
         class="w-full bg-white/5 rounded-xl px-4 py-3.5 mb-4 outline-none focus:ring-2 focus:ring-[#0A84FF]/40 focus:bg-white/[0.07] transition-all">
       <p id="authError" class="hidden text-sm text-[#FF453A] mb-3"></p>
-      <button id="authSubmitBtn" type="submit" class="w-full bg-gradient-to-r from-[#0A84FF] to-[#0066CC] active:scale-[0.98] transition-all rounded-2xl py-4 font-semibold text-[17px] shadow-lg shadow-[#0A84FF]/20">Войти</button>
+      <button id="authSubmitBtn" type="submit" class="w-full bg-gradient-to-r from-[#0A84FF] to-[#0066CC] spring-tap rounded-2xl py-4 font-semibold text-[17px] shadow-lg shadow-[#0A84FF]/20">Войти</button>
       <button type="button" onclick="toggleAuthMode()" class="w-full text-center text-sm text-[#8E8E93] mt-4">Нет аккаунта? Зарегистрироваться</button>
     </form>
   </div>
@@ -114,14 +134,14 @@
   <div id="app" class="max-w-md mx-auto min-h-screen flex-col relative z-10 hidden">
     <header class="safe-top px-5 pt-3 pb-1 flex items-start justify-between gap-3">
       <div>
-        <h1 class="text-[28px] font-bold tracking-tight">🐷 Копилка</h1>
+        <h1 class="t-title1">🐷 Копилка</h1>
         <p class="text-sm text-[#8E8E93] -mt-0.5">Умный трекер расходов</p>
       </div>
       <div class="flex gap-2 shrink-0">
-        <button id="settingsBtn" onclick="openSettingsSheet()" class="w-9 h-9 mt-1 rounded-full bg-white/5 flex items-center justify-center active:scale-90 transition-transform">
+        <button id="settingsBtn" onclick="openSettingsSheet()" class="w-9 h-9 mt-1 rounded-full bg-white/5 flex items-center justify-center spring-tap">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
-        <button id="changelogBtn" onclick="openChangelog()" class="relative w-9 h-9 mt-1 rounded-full bg-white/5 flex items-center justify-center active:scale-90 transition-transform">
+        <button id="changelogBtn" onclick="openChangelog()" class="relative w-9 h-9 mt-1 rounded-full bg-white/5 flex items-center justify-center spring-tap">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
           <span id="changelogDot" class="hidden absolute top-1 right-1 w-2 h-2 rounded-full bg-[#FF453A]"></span>
         </button>
@@ -159,7 +179,7 @@
           <p id="dailyLimitAmount" class="text-2xl font-bold text-[#30D158]"></p>
         </div>
 
-        <button onclick="openRecurringSheet()" class="w-full flex items-center justify-between bg-[#1c1c1e] rounded-2xl px-4 py-3.5 mb-4 active:scale-[0.98] transition-transform">
+        <button onclick="openRecurringSheet()" class="w-full flex items-center justify-between bg-[#1c1c1e] rounded-2xl px-4 py-3.5 mb-4 spring-tap">
           <span class="flex items-center gap-2.5 text-sm font-medium"><span class="text-lg">🔁</span> Регулярные платежи</span>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
         </button>
@@ -180,14 +200,14 @@
         <div class="bg-[#1c1c1e] rounded-2xl px-4 py-3 mb-5">
           <div class="flex items-center justify-between gap-2">
             <div id="ratesTicker" class="flex gap-3 overflow-x-auto text-xs text-[#8E8E93] flex-1"></div>
-            <button id="ratesRefreshBtn" onclick="fetchRates(true)" class="shrink-0 text-[#0A84FF] active:scale-90 transition-transform p-1">
+            <button id="ratesRefreshBtn" onclick="fetchRates(true)" class="shrink-0 text-[#0A84FF] spring-tap p-1">
               <svg id="refreshIcon" width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.2" stroke-opacity="0.25"/><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
             </button>
           </div>
           <p id="ratesUpdatedLabel" class="text-[10px] text-[#8E8E93] mt-1.5"></p>
         </div>
 
-        <button onclick="openAdviceSheet()" class="w-full relative overflow-hidden rounded-2xl p-4 mb-5 flex items-center gap-3 active:scale-[0.98] transition-transform" style="background:linear-gradient(120deg,#1c1c1e,#241c30)">
+        <button onclick="openAdviceSheet()" class="w-full relative overflow-hidden rounded-2xl p-4 mb-5 flex items-center gap-3 spring-tap" style="background:linear-gradient(120deg,#1c1c1e,#241c30)">
           <div class="absolute -right-6 -top-8 w-28 h-28 rounded-full opacity-30 blur-2xl pointer-events-none animate-pulse" style="background:radial-gradient(circle,#BF5AF2,transparent 70%)"></div>
           <div class="relative w-11 h-11 rounded-full bg-[#BF5AF2]/15 flex items-center justify-center text-xl shrink-0">🧠</div>
           <div class="relative flex-1 text-left">
@@ -197,7 +217,7 @@
           <svg class="relative shrink-0" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
         </button>
 
-        <h2 class="text-lg font-bold mb-3">Последние операции</h2>
+        <h2 class="t-title3 mb-3">Последние операции</h2>
         <p class="text-[11px] text-[#8E8E93] -mt-2 mb-3">Свайп влево — удалить</p>
         <div id="transactionsList" class="flex flex-col gap-2.5"></div>
         <div id="transactionsEmpty" class="text-center py-14 text-[#8E8E93]">
@@ -222,8 +242,8 @@
         </div>
 
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-bold">Ваши цели</h2>
-          <button onclick="openGoalSheet()" class="text-sm font-semibold text-[#FFD60A] bg-[#FFD60A]/10 px-3.5 py-1.5 rounded-full active:scale-95 transition-transform">+ Добавить</button>
+          <h2 class="t-title3">Ваши цели</h2>
+          <button onclick="openGoalSheet()" class="text-sm font-semibold text-[#FFD60A] bg-[#FFD60A]/10 px-3.5 py-1.5 rounded-full spring-tap">+ Добавить</button>
         </div>
         <div id="goalsList" class="flex flex-col gap-3"></div>
         <div id="goalsEmpty" class="text-center py-14 text-[#8E8E93]">
@@ -235,7 +255,7 @@
 
       <!-- ANALYTICS TAB -->
       <section id="tabAnalytics" class="hidden">
-        <h2 class="text-lg font-bold mb-3">Доходы и расходы</h2>
+        <h2 class="t-title3 mb-3">Доходы и расходы</h2>
         <div class="bg-[#1c1c1e] rounded-2xl p-4 mb-6">
           <div class="flex justify-between text-sm mb-2 gap-2">
             <span id="ivsIncomeLabel" class="text-[#30D158] font-medium truncate">Доходы 0 ₽</span>
@@ -247,7 +267,7 @@
           </div>
         </div>
 
-        <h2 class="text-lg font-bold mb-3">Расходы по категориям</h2>
+        <h2 class="t-title3 mb-3">Расходы по категориям</h2>
         <div id="categoryDonut" class="relative w-40 h-40 mx-auto mb-6 fade-slide-up"></div>
         <div id="categoryBars"></div>
         <div id="analyticsEmpty" class="text-center py-14 text-[#8E8E93]">
@@ -256,7 +276,7 @@
           <p class="text-sm mt-1">Аналитика появится после первой операции</p>
         </div>
 
-        <button onclick="exportCSV()" class="w-full mt-6 flex items-center justify-center gap-2 bg-white/5 rounded-2xl py-3.5 font-medium text-sm active:scale-[0.98] transition-transform">
+        <button onclick="exportCSV()" class="w-full mt-6 flex items-center justify-center gap-2 bg-white/5 rounded-2xl py-3.5 font-medium text-sm spring-tap">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Экспорт операций в CSV
         </button>
@@ -265,7 +285,7 @@
     </main>
 
     <!-- FAB -->
-    <button id="fabButton" class="fixed right-5 bottom-24 w-14 h-14 rounded-full bg-[#0A84FF] shadow-lg shadow-blue-500/30 flex items-center justify-center text-3xl font-light active:scale-90 transition-transform z-30">＋</button>
+    <button id="fabButton" class="fixed right-5 bottom-24 w-14 h-14 rounded-full bg-[#0A84FF] shadow-lg shadow-blue-500/30 flex items-center justify-center text-3xl font-light spring-tap z-30">＋</button>
 
     <!-- BOTTOM NAV -->
     <nav class="fixed bottom-0 inset-x-0 z-20">
@@ -296,11 +316,11 @@
       <div id="addHandle" class="pt-3 pb-1 flex justify-center touch-none"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
       <div class="px-5 pb-6 pt-2">
         <div class="flex items-center justify-between mb-5">
-          <h2 class="text-xl font-bold">Новая операция</h2>
-          <button onclick="closeSheet('addSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#8E8E93] active:scale-90 transition-transform">✕</button>
+          <h2 class="t-title3">Новая операция</h2>
+          <button onclick="closeSheet('addSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#8E8E93] spring-tap">✕</button>
         </div>
 
-        <button type="button" onclick="openCameraSheet()" class="w-full flex items-center justify-center gap-2 bg-white/5 active:bg-white/10 active:scale-[0.98] transition-all rounded-2xl py-3.5 font-medium text-sm text-[#0A84FF] mb-1.5">
+        <button type="button" onclick="openCameraSheet()" class="w-full flex items-center justify-center gap-2 bg-white/5 active:bg-white/10 spring-tap rounded-2xl py-3.5 font-medium text-sm text-[#0A84FF] mb-1.5">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1-2h7l1 2h2A1.5 1.5 0 0 1 20 8.5v10A1.5 1.5 0 0 1 18.5 20h-13A1.5 1.5 0 0 1 4 18.5v-10Z"/><circle cx="12" cy="13" r="3.4"/></svg>
           Сканировать чек
         </button>
@@ -316,8 +336,8 @@
           <p class="text-xs text-[#8E8E93] mb-2">ИИ распознал:</p>
           <p id="receiptConfirmText" class="text-sm mb-3 leading-relaxed"></p>
           <div class="flex gap-2 mb-2">
-            <button type="button" onclick="confirmReceipt(true)" class="flex-1 bg-[#30D158] text-black rounded-xl py-2.5 font-semibold text-sm active:scale-95 transition-transform">Да, верно</button>
-            <button type="button" onclick="confirmReceipt(false)" class="flex-1 bg-white/10 rounded-xl py-2.5 font-semibold text-sm active:scale-95 transition-transform">Введу сам</button>
+            <button type="button" onclick="confirmReceipt(true)" class="flex-1 bg-[#30D158] text-black rounded-xl py-2.5 font-semibold text-sm spring-tap">Да, верно</button>
+            <button type="button" onclick="confirmReceipt(false)" class="flex-1 bg-white/10 rounded-xl py-2.5 font-semibold text-sm spring-tap">Введу сам</button>
           </div>
           <button type="button" onclick="addMoreReceiptPhoto()" class="w-full text-center text-xs text-[#0A84FF] py-1">📷 Чек не поместился — доснять ещё часть</button>
         </div>
@@ -339,7 +359,7 @@
 
         <input id="commentInput" type="text" maxlength="60" placeholder="Комментарий (необязательно)" class="w-full bg-white/5 rounded-xl px-4 py-3.5 text-[15px] outline-none mb-5 focus:ring-2 focus:ring-[#0A84FF]/40">
 
-        <button id="addSaveBtn" onclick="saveTransaction()" disabled class="w-full bg-[#0A84FF] disabled:opacity-40 disabled:pointer-events-none active:scale-[0.98] transition-all rounded-2xl py-4 font-semibold text-[17px]">Добавить</button>
+        <button id="addSaveBtn" onclick="saveTransaction()" disabled class="w-full bg-[#0A84FF] disabled:opacity-40 disabled:pointer-events-none spring-tap rounded-2xl py-4 font-semibold text-[17px]">Добавить</button>
       </div>
     </div>
   </div>
@@ -350,8 +370,8 @@
       <div id="goalHandle" class="pt-3 pb-1 flex justify-center touch-none"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
       <div class="px-5 pb-6 pt-2">
         <div class="flex items-center justify-between mb-5">
-          <h2 class="text-xl font-bold">Новая цель</h2>
-          <button onclick="closeSheet('goalSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#8E8E93] active:scale-90 transition-transform">✕</button>
+          <h2 class="t-title3">Новая цель</h2>
+          <button onclick="closeSheet('goalSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#8E8E93] spring-tap">✕</button>
         </div>
         <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide mb-2">Название</p>
         <input id="goalNameInput" type="text" maxlength="40" placeholder="Например, Отпуск в Сочи" class="w-full bg-white/5 rounded-xl px-4 py-3.5 text-[15px] outline-none mb-5 focus:ring-2 focus:ring-[#FFD60A]/40">
@@ -360,7 +380,7 @@
           <input id="goalTargetInput" type="text" inputmode="decimal" placeholder="0" class="flex-1 bg-transparent text-[15px] outline-none">
           <span id="goalCurrencySymbol" class="text-[#8E8E93] text-sm">₽</span>
         </div>
-        <button onclick="saveGoal()" class="w-full bg-[#FFD60A] text-black active:scale-[0.98] transition-all rounded-2xl py-4 font-semibold text-[17px]">Создать цель</button>
+        <button onclick="saveGoal()" class="w-full bg-[#FFD60A] text-black spring-tap rounded-2xl py-4 font-semibold text-[17px]">Создать цель</button>
       </div>
     </div>
   </div>
@@ -371,8 +391,8 @@
       <div id="topUpHandle" class="pt-3 pb-1 flex justify-center touch-none"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
       <div class="px-5 pb-6 pt-2">
         <div class="flex items-center justify-between mb-1">
-          <h2 class="text-xl font-bold">Пополнить цель</h2>
-          <button onclick="closeSheet('topUpSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#8E8E93] active:scale-90 transition-transform">✕</button>
+          <h2 class="t-title3">Пополнить цель</h2>
+          <button onclick="closeSheet('topUpSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#8E8E93] spring-tap">✕</button>
         </div>
         <p id="topUpGoalName" class="text-[#FFD60A] font-semibold mb-1"></p>
         <p id="topUpBalanceLabel" class="text-xs text-[#8E8E93] mb-5"></p>
@@ -380,7 +400,7 @@
           <input id="topUpAmountInput" type="text" inputmode="decimal" placeholder="0" class="bg-transparent text-5xl font-bold text-center outline-none placeholder-[#3A3A3C] w-48">
           <span id="topUpCurrencySymbol" class="text-3xl font-semibold text-[#8E8E93]">₽</span>
         </div>
-        <button onclick="saveTopUp()" class="w-full bg-[#FFD60A] text-black active:scale-[0.98] transition-all rounded-2xl py-4 font-semibold text-[17px]">Пополнить</button>
+        <button onclick="saveTopUp()" class="w-full bg-[#FFD60A] text-black spring-tap rounded-2xl py-4 font-semibold text-[17px]">Пополнить</button>
       </div>
     </div>
   </div>
@@ -391,11 +411,11 @@
       <div id="changelogHandle" class="pt-3 pb-1 flex justify-center touch-none"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
       <div class="px-5 pb-6 pt-2">
         <div class="flex items-center justify-between mb-5">
-          <h2 class="text-xl font-bold">Что нового</h2>
-          <button onclick="closeSheet('changelogSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#8E8E93] active:scale-90 transition-transform">✕</button>
+          <h2 class="t-title3">Что нового</h2>
+          <button onclick="closeSheet('changelogSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#8E8E93] spring-tap">✕</button>
         </div>
         <div id="changelogList"></div>
-        <button onclick="closeSheet('changelogSheet')" class="w-full bg-white/10 active:scale-[0.98] transition-all rounded-2xl py-3.5 font-semibold text-[15px] mt-2">Понятно</button>
+        <button onclick="closeSheet('changelogSheet')" class="w-full bg-white/10 spring-tap rounded-2xl py-3.5 font-semibold text-[15px] mt-2">Понятно</button>
       </div>
     </div>
   </div>
@@ -403,7 +423,7 @@
   <!-- FULLSCREEN CAMERA -->
   <div id="cameraSheet" class="fixed inset-0 z-50 bg-black hidden flex-col">
     <div class="flex items-center justify-between px-4 safe-top pb-3">
-      <button onclick="closeCameraSheetUI()" class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white active:scale-90 transition-transform">✕</button>
+      <button onclick="closeCameraSheetUI()" class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white spring-tap">✕</button>
       <p class="text-white text-sm font-medium">Наведите на чек</p>
       <div class="w-9"></div>
     </div>
@@ -414,7 +434,7 @@
     </div>
     <div class="safe-bottom pt-5 flex items-center justify-center gap-10 bg-black">
       <button onclick="triggerGalleryFallback()" class="text-white/70 text-xs font-medium w-14 text-center leading-tight">Из<br>галереи</button>
-      <button onclick="capturePhoto()" class="w-16 h-16 rounded-full bg-white active:scale-90 transition-transform border-4 border-white/30"></button>
+      <button onclick="capturePhoto()" class="w-16 h-16 rounded-full bg-white spring-tap border-4 border-white/30"></button>
       <div class="w-14"></div>
     </div>
     <canvas id="cameraCanvas" class="hidden"></canvas>
@@ -426,8 +446,8 @@
       <div id="settingsHandle" class="pt-3 pb-1 flex justify-center touch-none"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
       <div class="px-5 pb-6 pt-2">
         <div class="flex items-center justify-between mb-5">
-          <h2 class="text-xl font-bold">Настройки</h2>
-          <button onclick="closeSheet('settingsSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#8E8E93] active:scale-90 transition-transform">✕</button>
+          <h2 class="t-title3">Настройки</h2>
+          <button onclick="closeSheet('settingsSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#8E8E93] spring-tap">✕</button>
         </div>
         <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide mb-2">Зарплата в месяц</p>
         <div class="flex items-center gap-2 bg-white/5 rounded-xl px-4 py-3.5 mb-2 focus-within:ring-2 focus-within:ring-[#0A84FF]/40">
@@ -466,9 +486,9 @@
           <button onclick="joinHousehold()" class="bg-white/10 rounded-xl px-4 text-sm font-semibold">Войти</button>
         </div>
         <div id="householdMembersList" class="mb-5"></div>
-        <button onclick="saveSalary()" class="w-full bg-[#0A84FF] active:scale-[0.98] transition-all rounded-2xl py-4 font-semibold text-[17px] mb-3">Сохранить</button>
-        <button onclick="openTutorial()" class="w-full bg-white/5 active:scale-[0.98] transition-all rounded-2xl py-3.5 font-semibold text-[15px] mb-3">📖 Как это работает</button>
-        <button onclick="handleLogout()" class="w-full bg-white/5 text-[#FF453A] active:scale-[0.98] transition-all rounded-2xl py-3.5 font-semibold text-[15px]">Выйти из аккаунта</button>
+        <button onclick="saveSalary()" class="w-full bg-[#0A84FF] spring-tap rounded-2xl py-4 font-semibold text-[17px] mb-3">Сохранить</button>
+        <button onclick="openTutorial()" class="w-full bg-white/5 spring-tap rounded-2xl py-3.5 font-semibold text-[15px] mb-3">📖 Как это работает</button>
+        <button onclick="handleLogout()" class="w-full bg-white/5 text-[#FF453A] spring-tap rounded-2xl py-3.5 font-semibold text-[15px]">Выйти из аккаунта</button>
       </div>
     </div>
   </div>
@@ -479,7 +499,7 @@
       <div id="premiumHandle" class="pt-3 pb-1 flex justify-center touch-none"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
       <div class="px-5 pb-6 pt-2 text-center">
         <p class="text-5xl mb-2">👑</p>
-        <h2 class="text-xl font-bold mb-1">Копилка Premium</h2>
+        <h2 class="t-title3 mb-1">Копилка Premium</h2>
         <p class="text-sm text-[#8E8E93] mb-5">Бесплатно доступно до 3 целей. С премиумом — без ограничений и с бонусами</p>
         <div class="text-left bg-white/5 rounded-2xl p-4 mb-5 space-y-2.5">
           <p class="text-sm flex items-center gap-2"><span class="text-[#FFD60A]">✓</span> Неограниченное число целей</p>
@@ -487,7 +507,7 @@
           <p class="text-sm flex items-center gap-2"><span class="text-[#FFD60A]">✓</span> Расширенная аналитика по месяцам</p>
           <p class="text-sm flex items-center gap-2"><span class="text-[#FFD60A]">✓</span> Экспорт операций</p>
         </div>
-        <button onclick="requestPremium()" class="w-full bg-[#FFD60A] text-black active:scale-[0.98] transition-all rounded-2xl py-4 font-semibold text-[17px] mb-3">Оформить Premium</button>
+        <button onclick="requestPremium()" class="w-full bg-[#FFD60A] text-black spring-tap rounded-2xl py-4 font-semibold text-[17px] mb-3">Оформить Premium</button>
         <button onclick="closeSheet('premiumSheet')" class="w-full text-[#8E8E93] text-sm py-2">Не сейчас</button>
       </div>
     </div>
@@ -506,7 +526,7 @@
         <span id="tutDot3" class="w-1.5 h-1.5 rounded-full bg-white/20"></span>
         <span id="tutDot4" class="w-1.5 h-1.5 rounded-full bg-white/20"></span>
       </div>
-      <button onclick="nextTutorialStep()" id="tutNextBtn" class="w-full bg-[#0A84FF] active:scale-[0.98] transition-all rounded-2xl py-3.5 font-semibold text-[15px] mb-2">Дальше</button>
+      <button onclick="nextTutorialStep()" id="tutNextBtn" class="w-full bg-[#0A84FF] spring-tap rounded-2xl py-3.5 font-semibold text-[15px] mb-2">Дальше</button>
       <button onclick="closeTutorial()" class="w-full text-[#8E8E93] text-sm py-1">Пропустить</button>
     </div>
   </div>
@@ -519,8 +539,8 @@
         <p class="text-3xl mb-2">🤔</p>
         <p id="clarifyQuestion" class="text-sm leading-relaxed mb-5"></p>
         <div class="flex gap-2">
-          <button onclick="clarifyAnswer(true)" class="flex-1 bg-[#30D158] text-black rounded-xl py-3 font-semibold text-sm active:scale-95 transition-transform">Да, верно</button>
-          <button onclick="clarifyAnswer(false)" class="flex-1 bg-white/10 rounded-xl py-3 font-semibold text-sm active:scale-95 transition-transform">Нет, я сам</button>
+          <button onclick="clarifyAnswer(true)" class="flex-1 bg-[#30D158] text-black rounded-xl py-3 font-semibold text-sm spring-tap">Да, верно</button>
+          <button onclick="clarifyAnswer(false)" class="flex-1 bg-white/10 rounded-xl py-3 font-semibold text-sm spring-tap">Нет, я сам</button>
         </div>
       </div>
     </div>
@@ -532,8 +552,8 @@
       <div id="recurringHandle" class="pt-3 pb-1 flex justify-center touch-none shrink-0"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
       <div class="px-5 pb-6 pt-2 overflow-y-auto">
         <div class="flex items-center justify-between mb-5">
-          <h2 class="text-xl font-bold">🔁 Регулярные платежи</h2>
-          <button onclick="closeSheet('recurringSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#8E8E93] active:scale-90 transition-transform">✕</button>
+          <h2 class="t-title3">🔁 Регулярные платежи</h2>
+          <button onclick="closeSheet('recurringSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#8E8E93] spring-tap">✕</button>
         </div>
         <div id="recurringList" class="mb-5"></div>
         <div class="border-t border-white/10 pt-4">
@@ -551,7 +571,7 @@
             </div>
             <input id="recDayInput" type="number" min="1" max="28" placeholder="День" class="w-20 bg-white/5 rounded-xl px-3 py-3 outline-none text-sm">
           </div>
-          <button onclick="saveRecurring()" class="w-full bg-[#0A84FF] active:scale-[0.98] transition-all rounded-2xl py-3.5 font-semibold text-[15px]">Добавить</button>
+          <button onclick="saveRecurring()" class="w-full bg-[#0A84FF] spring-tap rounded-2xl py-3.5 font-semibold text-[15px]">Добавить</button>
         </div>
       </div>
     </div>
@@ -563,15 +583,15 @@
       <div id="adviceHandle" class="pt-3 pb-1 flex justify-center touch-none shrink-0"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
       <div class="px-5 pb-6 pt-2 overflow-y-auto">
         <div class="flex items-center justify-between mb-5">
-          <h2 class="text-xl font-bold flex items-center gap-2">🧠 Советы ИИ</h2>
-          <button onclick="closeSheet('adviceSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#8E8E93] active:scale-90 transition-transform">✕</button>
+          <h2 class="t-title3 flex items-center gap-2">🧠 Советы ИИ</h2>
+          <button onclick="closeSheet('adviceSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#8E8E93] spring-tap">✕</button>
         </div>
         <div id="adviceLoading" class="hidden flex-col items-center gap-3 py-10 text-sm text-[#8E8E93]">
           <svg class="animate-spin" width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.2" stroke-opacity="0.25"/><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
           Анализирую ваши траты…
         </div>
         <div id="adviceContent" class="space-y-3"></div>
-        <button onclick="askAiAdvice()" class="w-full mt-5 bg-[#BF5AF2] active:scale-[0.98] transition-all rounded-2xl py-3.5 font-semibold text-[15px]">Обновить совет</button>
+        <button onclick="askAiAdvice()" class="w-full mt-5 bg-[#BF5AF2] spring-tap rounded-2xl py-3.5 font-semibold text-[15px]">Обновить совет</button>
       </div>
     </div>
   </div>
@@ -673,6 +693,16 @@
   }
 
   let currentHousehold = null; // { id, name, invite_code, owner_id }
+
+  // Генерация короткого человекочитаемого инвайт-кода на клиенте (используется только если
+  // в таблице households нет DEFAULT/триггера, генерирующего invite_code на стороне БД).
+  function generateInviteCode() {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    let out = '';
+    for (let i = 0; i < 6; i++) out += chars[Math.floor(Math.random() * chars.length)];
+    return out;
+  }
+
   async function loadUserData(userId) {
     const profileRes = await sb.from('profiles').select('*').eq('id', userId).single();
     const hhId = profileRes.data ? profileRes.data.household_id : null;
@@ -691,16 +721,34 @@
       hhRow = data || null;
     }
     if (!hhRow) {
-      // household_id пуст ИЛИ указывает на несуществующую запись — чиним
-      const { data: newHh, error: hhErr } = await sb.from('households').insert({ owner_id: userId }).select().single();
+      // household_id пуст ИЛИ указывает на несуществующую запись — создаём новую семью.
+      // ВАЖНО: вставка сюда требует RLS-политики на households, разрешающей
+      // INSERT для authenticated с проверкой owner_id = auth.uid() (см. fix_households_rls.sql).
+      // Без такой политики Supabase вернёт ошибку 42501 "row violates row-level security policy".
+      const { data: newHh, error: hhErr } = await sb
+        .from('households')
+        .insert({ owner_id: userId, invite_code: generateInviteCode() })
+        .select()
+        .single();
       if (!hhErr && newHh) {
-        await sb.from('profiles').update({ household_id: newHh.id }).eq('id', userId);
+        const { error: profErr } = await sb.from('profiles').update({ household_id: newHh.id }).eq('id', userId);
+        if (profErr) {
+          console.error('profile household_id update failed:', profErr);
+          showToast('Семья создана, но не удалось привязать профиль. Обновите страницу.', { error: true });
+        }
         realHhId = newHh.id;
         hhRow = newHh;
       } else {
         console.error('household create failed:', hhErr);
-        showToast('Ошибка семьи: ' + JSON.stringify(hhErr), { error: true });
-        transactions = []; goals = []; recurringPayments = []; currentHousehold = null; return;
+        // 42501 = RLS-политика Supabase блокирует вставку в households для этого пользователя.
+        // Это настройка на стороне базы данных (не баг в этом файле) — нужная политика описана
+        // в fix_households_rls.sql. Показываем понятное сообщение вместо сырого JSON.
+        const friendly = (hhErr && hhErr.code === '42501')
+          ? 'Не получилось создать семейный бюджет: база данных блокирует это действие (нет прав доступа). Нужно обновить политику безопасности в Supabase для таблицы households — см. инструкцию у разработчика.'
+          : 'Не удалось создать семейный бюджет. Попробуйте перезайти в приложение.';
+        showToast(friendly, { error: true });
+        transactions = []; goals = []; recurringPayments = []; currentHousehold = null;
+        return;
       }
     }
 
@@ -776,7 +824,7 @@
         </div>
         <div class="flex items-center gap-2">
           <span class="text-sm font-semibold ${rp.type === 'income' ? 'text-[#30D158]' : 'text-[#FF453A]'}">${rp.type === 'income' ? '+' : '-'}${fmRaw(Number(rp.amount), rp.currency)}</span>
-          <button onclick="deleteRecurring('${rp.id}')" class="text-[#8E8E93] active:scale-90 transition-transform">✕</button>
+          <button onclick="deleteRecurring('${rp.id}')" class="text-[#8E8E93] spring-tap">✕</button>
         </div>
       </div>`).join('');
   }
@@ -934,6 +982,14 @@
   let ratesUpdatedAt = null;
   let rateTrend = {};
 
+  // FIX (currency switch bug): a monotonically increasing token guards the balance's rAF animation
+  // loop so that two overlapping animate calls (e.g. a fast double-tap on a currency chip, or a
+  // currency switch firing while a transaction-driven re-render is still animating) can no longer
+  // interleave writes to the same DOM node. The previous implementation had no such guard, which is
+  // what made the displayed currency appear to "change on its own" after tapping a currency chip.
+  let balanceAnimToken = 0;
+  let currencySwitchLock = false;
+
   const TAB_IDS = { home: 'tabHome', goals: 'tabGoals', analytics: 'tabAnalytics' };
 
   // ---------- Persistence ----------
@@ -989,10 +1045,13 @@
     if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
     e.target.value = v;
   }
-  function animateValue(el, from, to, duration, formatFn) {
+  // FIX: animateValue now takes a token and bails out if a newer animation has superseded it,
+  // instead of blindly writing to the DOM regardless of which call started last.
+  function animateValue(el, from, to, duration, formatFn, token) {
     if (prefersReducedMotion() || !el) { if (el) el.textContent = formatFn(to); return; }
     const start = performance.now();
     function step(now) {
+      if (token !== undefined && token !== balanceAnimToken) return; // a newer render took over
       const p = Math.min(1, (now - start) / duration);
       const eased = 1 - Math.pow(1 - p, 3);
       el.textContent = formatFn(from + (to - from) * eased);
@@ -1072,19 +1131,29 @@
       </button>`;
     }).join('');
   }
+  // FIX: guarded with currencySwitchLock so a fast double-tap can't fire two overlapping
+  // conversions/renders/Supabase writes at once, which was the second half of the "currency
+  // changes on its own" bug.
   async function setDisplayCurrency(cur) {
-    if (cur === displayCurrency) return;
-    displayCurrency = cur;
-    localStorage.setItem('piggy_currency', cur);
-    renderCurrencySelector();
-    updateRatesUI();
-    renderAll();
-    if (currentUser) await sb.from('profiles').update({ display_currency: cur }).eq('id', currentUser.id);
+    if (cur === displayCurrency || currencySwitchLock) return;
+    currencySwitchLock = true;
+    try {
+      displayCurrency = cur;
+      localStorage.setItem('piggy_currency', cur);
+      renderCurrencySelector();
+      updateRatesUI();
+      renderAll();
+      if (currentUser) await sb.from('profiles').update({ display_currency: cur }).eq('id', currentUser.id);
+    } finally {
+      currencySwitchLock = false;
+    }
   }
 
   function renderBalance() {
     const target = convert(calcBalance(), 'RUB', displayCurrency);
-    animateValue(document.getElementById('balanceAmount'), lastBalanceDisplay, target, 500, v => fmRaw(v, displayCurrency));
+    balanceAnimToken++;
+    const myToken = balanceAnimToken;
+    animateValue(document.getElementById('balanceAmount'), lastBalanceDisplay, target, 500, v => fmRaw(v, displayCurrency), myToken);
     lastBalanceDisplay = target;
     document.getElementById('incomeAmount').textContent = fmDisplay(calcIncome());
     document.getElementById('expenseAmount').textContent = fmDisplay(calcExpense());
@@ -1174,8 +1243,8 @@
           <div class="h-full rounded-full transition-all duration-500" style="width:${pct}%; background:linear-gradient(90deg,#FFD60A,#FF9F0A)"></div>
         </div>
         <div class="flex gap-2">
-          <button onclick="openTopUpSheet('${g.id}')" class="flex-1 bg-white/10 active:bg-white/20 active:scale-[0.98] transition-all rounded-xl py-2.5 font-medium text-sm">Пополнить</button>
-          <button onclick="deleteGoal('${g.id}')" class="px-3 text-[#FF453A]/80 active:scale-90 transition-transform text-sm">Удалить</button>
+          <button onclick="openTopUpSheet('${g.id}')" class="flex-1 bg-white/10 active:bg-white/20 spring-tap rounded-xl py-2.5 font-medium text-sm">Пополнить</button>
+          <button onclick="deleteGoal('${g.id}')" class="px-3 text-[#FF453A]/80 spring-tap text-sm">Удалить</button>
         </div>
       </div>`;
     }).join('');
