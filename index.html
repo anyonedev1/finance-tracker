@@ -699,7 +699,7 @@
         hhRow = newHh;
       } else {
         console.error('household create failed:', hhErr);
-        showToast('Ошибка семьи: ' + (hhErr?.message || 'неизвестно'), { error: true });
+        showToast('Ошибка семьи: ' + JSON.stringify(hhErr), { error: true });
         transactions = []; goals = []; recurringPayments = []; currentHousehold = null; return;
       }
     }
