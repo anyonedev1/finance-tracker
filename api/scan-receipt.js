@@ -33,9 +33,9 @@ export default async function handler(req, res) {
 
   const prompt = `Посмотри на фото чека. ${multiNote}
 Верни ТОЛЬКО JSON без markdown, без пояснений, строго такого вида:
-{"amount": число или null, "store": "название магазина" или null, "currency": "RUB" или "USD" или "EUR" или "BYN" или null, "category": одно из ["Еда","Транспорт","Жильё","Развлечения","Здоровье","Покупки","Связь","Другое"], "confidence": "high" или "low", "unclear_field": "amount" или "category" или null, "items": ["товар 1", "товар 2"], "advice": "один короткий дружелюбный совет на русском по этим конкретным покупкам, с конкретикой, не банальность"}
+{"amount": число или null, "store": "название магазина" или null, "currency": "RUB" или "USD" или "EUR" или "BYN" или null, "category": одно из ["Еда","Транспорт","Жильё","Развлечения","Здоровье","Покупки","Связь","Другое"], "confidence": "high" или "low", "unclear_field": "amount" или "category" или null, "items": ["товар 1", "товар 2", "товар 3"], "advice": "один короткий совет на русском, максимум 15 слов"}
 amount — это итоговая сумма к оплате (обычно самая крупная цифра внизу чека / на последнем фото, рядом со словом "Итого"/"Total"/"К оплате").
-items — краткий список из 3-6 самых заметных позиций (не более 4 слов на позицию).
+items — МАКСИМУМ 3 самых заметных позиции, каждая максимум 3 слова. Это не обязательное поле — если чек нечёткий, оставь пустой массив.
 confidence: "high" только если уверен и в сумме, и в категории. Иначе "low" и укажи unclear_field.${examplesText}`;
 
   try {
@@ -47,7 +47,7 @@ confidence: "high" только если уверен и в сумме, и в к
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts }],
-          generationConfig: { temperature: 0.1, maxOutputTokens: 600, responseMimeType: 'application/json' },
+          generationConfig: { temperature: 0.1, maxOutputTokens: 1500, responseMimeType: 'application/json' },
         }),
       }
     );
