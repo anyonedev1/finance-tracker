@@ -21,7 +21,7 @@
     --ios-surface: #121214;
     --ios-card: #1C1C1E;
     --ios-card-secondary: #2C2C2E;
-    --ios-border: rgba(255, 255, 255, 0.09);
+    --ios-border: rgba(255, 255, 255, 0.08);
     --ios-blue: #0A84FF;
     --ios-green: #30D158;
     --ios-red: #FF453A;
@@ -46,24 +46,22 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  /* Deep Glowing Ambient */
   body::before {
     content:'';
     position: fixed;
     inset: 0;
     background:
-      radial-gradient(circle at 15% -10%, rgba(10, 132, 255, 0.2), transparent 45%),
-      radial-gradient(circle at 85% 15%, rgba(48, 209, 88, 0.12), transparent 40%),
-      radial-gradient(circle at 50% 110%, rgba(191, 90, 242, 0.14), transparent 50%);
+      radial-gradient(circle at 15% -10%, rgba(10, 132, 255, 0.22), transparent 45%),
+      radial-gradient(circle at 85% 15%, rgba(48, 209, 88, 0.14), transparent 40%),
+      radial-gradient(circle at 50% 110%, rgba(191, 90, 242, 0.15), transparent 50%);
     pointer-events: none;
     z-index: 0;
   }
 
-  /* iOS Frosted Glass */
   .ios-glass {
     background: rgba(28, 28, 30, 0.78);
-    backdrop-filter: blur(35px) saturate(200%);
-    -webkit-backdrop-filter: blur(35px) saturate(200%);
+    backdrop-filter: blur(35px) saturate(190%);
+    -webkit-backdrop-filter: blur(35px) saturate(190%);
     border: 1px solid var(--ios-border);
   }
 
@@ -71,24 +69,21 @@
     background: var(--ios-card);
     border-radius: 22px;
     border: 1px solid var(--ios-border);
-    box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.5);
   }
 
-  /* Spring Taps */
   .ios-press {
-    transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.18s ease;
+    transition: transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.16s ease;
   }
   .ios-press:active {
     transform: scale(0.95);
     opacity: 0.85;
   }
 
-  /* Sheet Springs */
   .sheet-transition {
-    transition: transform 0.42s cubic-bezier(0.32, 1.25, 0.45, 1);
+    transition: transform 0.38s cubic-bezier(0.32, 1.25, 0.45, 1);
   }
 
-  /* Animations */
   @keyframes shimmer { 0%{background-position:-200% 0;} 100%{background-position:200% 0;} }
   .shimmer-text {
     background: linear-gradient(90deg, #FFFFFF 25%, #64D2FF 50%, #FFFFFF 75%);
@@ -96,20 +91,20 @@
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    animation: shimmer 3.8s linear infinite;
+    animation: shimmer 4s linear infinite;
   }
 
   @keyframes pulseGlow {
-    0%, 100% { transform: scale(1); opacity: 0.7; }
-    50% { transform: scale(1.08); opacity: 1; }
+    0%, 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.06); opacity: 1; }
   }
   .pulse-glow { animation: pulseGlow 2.8s ease-in-out infinite; }
 
   @keyframes slideUp {
-    from { transform: translateY(14px); opacity: 0; }
+    from { transform: translateY(12px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
   }
-  .slide-up { animation: slideUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .slide-up { animation: slideUp 0.32s cubic-bezier(0.22, 1, 0.36, 1) both; }
 </style>
 </head>
 <body class="flex justify-center bg-black select-none">
@@ -134,7 +129,7 @@
 
       <input id="authEmail" type="email" required placeholder="Электронная почта" class="w-full bg-[#1C1C1E] border border-white/10 rounded-2xl px-4 py-3.5 mb-2.5 outline-none text-sm focus:border-[var(--ios-blue)] transition-colors">
       <input id="authPassword" type="password" required minlength="6" placeholder="Пароль" class="w-full bg-[#1C1C1E] border border-white/10 rounded-2xl px-4 py-3.5 mb-4 outline-none text-sm focus:border-[var(--ios-blue)] transition-colors">
-      <p id="authError" class="hidden text-xs text-[var(--ios-red)] mb-3 text-center"></p>
+      <p id="authError" class="hidden text-xs text-[var(--ios-red)] mb-3 text-center font-medium"></p>
 
       <button id="authSubmitBtn" type="submit" class="w-full bg-gradient-to-r from-[var(--ios-blue)] to-[#388af6] text-white font-bold text-sm rounded-2xl py-3.5 ios-press shadow-xl shadow-blue-500/25">Войти</button>
       <button type="button" onclick="toggleAuthMode()" class="w-full text-center text-xs text-[var(--ios-subtext)] mt-4 font-semibold">Нет аккаунта? Зарегистрироваться</button>
@@ -144,32 +139,35 @@
   <!-- MAIN APP -->
   <div id="app" class="w-full max-w-md h-full flex flex-col relative hidden z-10">
 
-    <!-- TOP BAR (iOS HEADER) -->
+    <!-- TOP HEADER -->
     <header class="shrink-0 px-5 pt-[max(var(--safe-top),20px)] pb-3 flex items-center justify-between z-20">
       <div>
         <div class="flex items-center gap-2">
           <span class="text-2xl">🐷</span>
           <h1 class="text-2xl font-black tracking-tight text-white">Копилка</h1>
         </div>
-        <button id="familyBadge" onclick="openFamilySheet()" class="flex items-center gap-2 mt-1.5 bg-[#1C1C1E] px-3 py-1.5 rounded-full border border-white/10 ios-press shadow-sm">
+        <button id="familyBadge" onclick="openFamilySheet()" class="flex items-center gap-2 mt-1.5 bg-[#1C1C1E] px-3 py-1 rounded-full border border-white/10 ios-press">
           <div id="familyAvatarsMini" class="flex -space-x-2"></div>
           <span id="familyBadgeLabel" class="text-xs text-[var(--ios-subtext)] font-bold">Личный бюджет</span>
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg>
         </button>
       </div>
 
-      <div class="flex items-center gap-2.5">
-        <button id="settingsBtn" onclick="openSettingsSheet()" class="w-10 h-10 rounded-full ios-glass flex items-center justify-center ios-press shadow-md">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <div class="flex items-center gap-2">
+        <button onclick="openGuideSheet()" class="h-9 px-3 rounded-full bg-white/10 border border-white/10 flex items-center gap-1 text-xs font-bold ios-press text-[var(--ios-teal)]">
+          <span>📖</span> Гайд
         </button>
-        <button id="changelogBtn" onclick="openChangelog()" class="relative w-10 h-10 rounded-full ios-glass flex items-center justify-center ios-press shadow-md">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
-          <span id="changelogDot" class="hidden absolute top-2 right-2 w-2 h-2 rounded-full bg-[var(--ios-red)]"></span>
+        <button id="settingsBtn" onclick="openSettingsSheet()" class="w-9 h-9 rounded-full ios-glass flex items-center justify-center ios-press">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+        <button id="changelogBtn" onclick="openChangelog()" class="relative w-9 h-9 rounded-full ios-glass flex items-center justify-center ios-press">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+          <span id="changelogDot" class="hidden absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[var(--ios-red)]"></span>
         </button>
       </div>
     </header>
 
-    <!-- CONTENT SCROLL -->
+    <!-- MAIN SCROLL -->
     <main id="mainScroll" class="flex-1 px-5 pt-1 pb-32 overflow-y-auto">
 
       <!-- TAB 1: HOME -->
@@ -178,16 +176,16 @@
           <svg id="pullSpinner" width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#8E8E93" stroke-width="2.5" stroke-opacity="0.3"/><path d="M21 12a9 9 0 0 0-9-9" stroke="#8E8E93" stroke-width="2.5" stroke-linecap="round"/></svg>
         </div>
 
-        <!-- APPLE CARD BALANCE -->
+        <!-- BALANCE CARD -->
         <div class="ios-card p-6 mb-4 relative overflow-hidden bg-gradient-to-b from-[#1C1C1E] to-[#141416]">
           <div class="flex items-center justify-between mb-2">
-            <span class="text-xs font-bold tracking-wider uppercase text-[var(--ios-subtext)]">Общий баланс</span>
+            <span class="text-xs font-bold tracking-wider uppercase text-[var(--ios-subtext)]">Баланс бюджета</span>
             <span id="syncIndicator" class="hidden items-center gap-1.5 text-xs text-[var(--ios-green)] font-semibold">
-              <span class="w-1.5 h-1.5 rounded-full bg-[var(--ios-green)] animate-ping"></span> синхронизировано
+              <span class="w-1.5 h-1.5 rounded-full bg-[var(--ios-green)] animate-ping"></span> обновлено
             </span>
           </div>
 
-          <p id="balanceAmount" class="text-5xl font-black tracking-tight mb-6 shimmer-text">0 ₽</p>
+          <p id="balanceAmount" class="text-5xl font-black tracking-tight mb-5 shimmer-text">0 ₽</p>
 
           <div class="grid grid-cols-2 gap-3">
             <div class="bg-black/40 rounded-2xl p-3.5 border border-white/5">
@@ -208,7 +206,7 @@
 
         <div id="budgetWidget" class="hidden ios-card p-4 mb-3">
           <div class="flex justify-between items-center mb-2 text-xs">
-            <span class="text-[var(--ios-subtext)] font-bold uppercase tracking-wider">Бюджет месяца</span>
+            <span class="text-[var(--ios-subtext)] font-bold uppercase tracking-wider">Лимит расходов</span>
             <span id="budgetText" class="font-extrabold text-white"></span>
           </div>
           <div class="h-2 bg-black/40 rounded-full overflow-hidden">
@@ -216,25 +214,26 @@
           </div>
         </div>
 
+        <!-- FAST ACCESS TILES -->
         <div class="grid grid-cols-2 gap-2.5 mb-4">
           <button onclick="openRecurringSheet()" class="ios-card flex items-center gap-3 p-3.5 ios-press">
             <div class="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-lg">🔁</div>
             <div class="text-left min-w-0">
               <p class="text-xs font-bold truncate">Регулярные</p>
-              <p class="text-[10px] text-[var(--ios-subtext)] truncate">Подписки и счета</p>
+              <p class="text-[10px] text-[var(--ios-subtext)] truncate">Счета и подписки</p>
             </div>
           </button>
           <button onclick="openAdviceSheet()" class="ios-card flex items-center gap-3 p-3.5 ios-press">
             <div class="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-lg">🧠</div>
             <div class="text-left min-w-0">
               <p class="text-xs font-bold truncate">ИИ-советник</p>
-              <p class="text-[10px] text-[var(--ios-subtext)] truncate">Где сэкономить</p>
+              <p class="text-[10px] text-[var(--ios-subtext)] truncate">Анализ в валюте</p>
             </div>
           </button>
         </div>
 
         <div class="flex items-center justify-between mb-2 px-1">
-          <span class="text-xs font-bold text-[var(--ios-subtext)] uppercase tracking-wider">Валюта отображения</span>
+          <span class="text-xs font-bold text-[var(--ios-subtext)] uppercase tracking-wider">Основная валюта</span>
           <div class="flex items-center gap-2">
             <span id="ratesUpdatedLabel" class="text-[10px] text-[var(--ios-subtext)] font-medium"></span>
             <button id="ratesRefreshBtn" onclick="fetchRates(true)" class="text-[var(--ios-blue)] p-1 ios-press">
@@ -245,14 +244,14 @@
         <div id="currencySelector" class="grid grid-cols-4 gap-2 mb-6"></div>
 
         <div class="flex items-center justify-between mb-3 px-1">
-          <h2 class="text-lg font-black">История операций</h2>
+          <h2 class="text-lg font-black">Операции семьи</h2>
           <span class="text-[11px] text-[var(--ios-subtext)] font-medium">свайп для удаления</span>
         </div>
         <div id="transactionsList" class="flex flex-col gap-2.5"></div>
         <div id="transactionsEmpty" class="text-center py-12 text-[var(--ios-subtext)]">
           <p class="text-4xl mb-2">🧾</p>
           <p class="font-bold text-white/80 text-sm">Операций пока нет</p>
-          <p class="text-xs mt-0.5">Нажмите «+» внизу, чтобы добавить первую трату</p>
+          <p class="text-xs mt-0.5">Нажмите «＋» внизу для добавления</p>
         </div>
       </section>
 
@@ -265,7 +264,7 @@
           </svg>
           <div>
             <p id="goalsRingLabel" class="text-3xl font-black">0%</p>
-            <p class="text-xs text-[var(--ios-subtext)] font-semibold">Общий семейный прогресс</p>
+            <p class="text-xs text-[var(--ios-subtext)] font-semibold">Прогресс общих целей</p>
             <p id="goalsRingSub" class="text-xs font-bold text-white/90 mt-0.5"></p>
           </div>
         </div>
@@ -278,7 +277,7 @@
         <div id="goalsEmpty" class="text-center py-12 text-[var(--ios-subtext)]">
           <p class="text-4xl mb-2">🎯</p>
           <p class="font-bold text-white/80 text-sm">Целей пока нет</p>
-          <p class="text-xs mt-0.5">Создайте совместную цель для накоплений</p>
+          <p class="text-xs mt-0.5">Создайте общую цель для накоплений</p>
         </div>
       </section>
 
@@ -296,13 +295,13 @@
           </div>
         </div>
 
-        <h2 class="text-lg font-black mb-2.5 px-1">Категории</h2>
+        <h2 class="text-lg font-black mb-2.5 px-1">Категории трат</h2>
         <div id="categoryDonut" class="relative w-40 h-40 mx-auto mb-5"></div>
         <div id="categoryBars"></div>
         <div id="analyticsEmpty" class="text-center py-12 text-[var(--ios-subtext)]">
           <p class="text-4xl mb-2">📊</p>
           <p class="font-bold text-white/80 text-sm">Нет расходов</p>
-          <p class="text-xs mt-0.5">Статистика появится после первой записи</p>
+          <p class="text-xs mt-0.5">Диаграмма появится после первой записи</p>
         </div>
 
         <button onclick="exportCSV()" class="w-full mt-5 ios-card py-3.5 font-bold text-xs flex items-center justify-center gap-2 ios-press">
@@ -313,10 +312,10 @@
 
     </main>
 
-    <!-- FLOATING '+' BUTTON (iOS FinTech Accent) -->
+    <!-- FAB '+' BUTTON -->
     <button id="fabButton" class="fixed right-5 bottom-24 w-14 h-14 rounded-full bg-gradient-to-tr from-[var(--ios-blue)] to-[#4ca0ff] shadow-2xl shadow-blue-500/40 flex items-center justify-center text-3xl font-light z-30 ios-press">＋</button>
 
-    <!-- iOS BOTTOM DOCK TABBAR -->
+    <!-- BOTTOM DOCK -->
     <nav class="shrink-0 ios-glass border-t border-white/10 pb-[max(var(--safe-bottom),14px)] pt-2 px-6 z-20">
       <div class="relative flex items-center justify-between">
         <div id="navIndicator" class="absolute -top-2 h-0.5 w-1/3 bg-[var(--ios-blue)] transition-transform duration-300"></div>
@@ -334,13 +333,12 @@
         </button>
       </div>
     </nav>
-
   </div>
 
-  <!-- MODAL BACKDROP -->
+  <!-- BACKDROP -->
   <div id="backdrop" class="fixed inset-0 bg-black/75 backdrop-blur-md opacity-0 pointer-events-none transition-opacity duration-300 z-40"></div>
 
-  <!-- ADD TRANSACTION SHEET (iOS Modal) -->
+  <!-- ADD TRANSACTION SHEET -->
   <div id="addSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full sheet-transition max-w-md mx-auto">
     <div class="bg-[#1C1C1E] rounded-t-[32px] border-t border-white/10 pb-[max(var(--safe-bottom),22px)] max-h-[90vh] overflow-y-auto shadow-2xl">
       <div id="addHandle" class="pt-3 pb-2 flex justify-center touch-none"><div class="w-10 h-1 rounded-full bg-[#545458]"></div></div>
@@ -363,7 +361,7 @@
           </div>
         </div>
 
-        <!-- iOS Segmented Control -->
+        <!-- iOS Segmented -->
         <div class="relative flex bg-[#2C2C2E] rounded-2xl p-1 mb-5">
           <div id="segSlider" class="absolute inset-y-1 left-1 w-[calc(50%-4px)] bg-[#636366] rounded-xl transition-transform duration-300"></div>
           <button type="button" id="segExpenseBtn" onclick="setType('expense')" class="relative z-10 flex-1 py-2 text-xs font-bold text-white">Расход</button>
@@ -381,12 +379,12 @@
 
         <input id="commentInput" type="text" maxlength="60" placeholder="Комментарий или магазин" class="w-full bg-[#2C2C2E] border border-white/5 rounded-2xl px-4 py-3.5 text-xs outline-none mb-5 text-white">
 
-        <button id="addSaveBtn" onclick="saveTransaction()" disabled class="w-full bg-[var(--ios-blue)] disabled:opacity-40 font-bold text-sm rounded-2xl py-4 ios-press shadow-xl shadow-blue-500/20">Добавить в бюджет</button>
+        <button id="addSaveBtn" onclick="saveTransaction()" disabled class="w-full bg-[var(--ios-blue)] disabled:opacity-40 font-bold text-sm rounded-2xl py-4 ios-press shadow-xl shadow-blue-500/20">Добавить операцию</button>
       </div>
     </div>
   </div>
 
-  <!-- FAMILY SHEET (СЕМЬЯ БЕЗ ОШИБОК EMAIL) -->
+  <!-- FAMILY SHEET -->
   <div id="familySheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full sheet-transition max-w-md mx-auto">
     <div class="bg-[#1C1C1E] rounded-t-[32px] border-t border-white/10 pb-[max(var(--safe-bottom),22px)] max-h-[85vh] overflow-y-auto shadow-2xl">
       <div id="familyHandle" class="pt-3 pb-2 flex justify-center touch-none"><div class="w-10 h-1 rounded-full bg-[#545458]"></div></div>
@@ -395,26 +393,139 @@
           <h2 class="text-lg font-black">👨‍👩‍👧 Семейный доступ</h2>
           <button onclick="closeSheet('familySheet')" class="w-8 h-8 rounded-full bg-[#2C2C2E] text-[var(--ios-subtext)] flex items-center justify-center font-bold text-xs ios-press">✕</button>
         </div>
-        <p id="familySheetSub" class="text-xs text-[var(--ios-subtext)] mb-4">Общий бюджет и синхронизация в реальном времени</p>
+        <p id="familySheetSub" class="text-xs text-[var(--ios-subtext)] mb-4">Общий семейный бюджет и онлайн-синхронизация</p>
 
         <p class="text-xs font-bold text-[var(--ios-subtext)] uppercase tracking-wider mb-2 px-1">Участники</p>
         <div id="familyMembersFull" class="flex flex-col gap-2 mb-4"></div>
 
-        <p class="text-xs font-bold text-[var(--ios-subtext)] uppercase tracking-wider mb-2 px-1">Бессрочный PIN семьи</p>
+        <p class="text-xs font-bold text-[var(--ios-subtext)] uppercase tracking-wider mb-2 px-1">Постоянный PIN семьи</p>
         <div class="bg-[#2C2C2E] rounded-2xl p-4 mb-4 flex items-center justify-between border border-white/5">
           <div>
             <p id="householdCodeFull" class="font-mono text-3xl font-black tracking-widest text-[var(--ios-blue)]">------</p>
-            <p class="text-[10px] text-[var(--ios-subtext)] mt-0.5">Передайте этот 6-значный код члену семьи</p>
+            <p class="text-[10px] text-[var(--ios-subtext)] mt-0.5">Дайте этот 6-значный цифровой код члену семьи</p>
           </div>
           <button onclick="copyInviteCode()" class="bg-white/10 text-white px-4 py-2.5 rounded-xl text-xs font-bold ios-press">Скопировать</button>
         </div>
 
-        <p class="text-xs font-bold text-[var(--ios-subtext)] uppercase tracking-wider mb-2 px-1">Присоединиться к другой семье</p>
+        <p class="text-xs font-bold text-[var(--ios-subtext)] uppercase tracking-wider mb-2 px-1">Присоединиться к семье по PIN</p>
         <div class="flex gap-2 mb-2">
           <input id="joinCodeInputFull" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="000000" class="flex-1 bg-[#2C2C2E] border border-white/5 rounded-2xl px-4 py-3 text-center font-mono text-base tracking-widest outline-none">
           <button onclick="joinHousehold('joinCodeInputFull')" class="bg-[var(--ios-blue)] font-bold text-xs px-5 rounded-2xl ios-press">Войти</button>
         </div>
-        <p class="text-[10px] text-[var(--ios-subtext)] leading-tight px-1">После ввода PIN-кода приложение синхронизирует вас с семейным бюджетом.</p>
+        <p class="text-[10px] text-[var(--ios-subtext)] leading-tight px-1">После ввода PIN-кода бюджет автоматически объединится.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECURRING SHEET (ПОЛНОСТЬЮ ИСПРАВЛЕНЫ) -->
+  <div id="recurringSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full sheet-transition max-w-md mx-auto">
+    <div class="bg-[#1C1C1E] rounded-t-[32px] border-t border-white/10 pb-[max(var(--safe-bottom),22px)] max-h-[85vh] overflow-y-auto shadow-2xl">
+      <div id="recurringHandle" class="pt-3 pb-2 flex justify-center touch-none"><div class="w-10 h-1 rounded-full bg-[#545458]"></div></div>
+      <div class="px-5 pt-1">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-lg font-black">🔁 Регулярные платежи</h2>
+          <button onclick="closeSheet('recurringSheet')" class="w-8 h-8 rounded-full bg-[#2C2C2E] text-[var(--ios-subtext)] flex items-center justify-center font-bold text-xs">✕</button>
+        </div>
+        <p class="text-xs text-[var(--ios-subtext)] mb-3">Счета, подписки и аренда списываются автоматически или по кнопке</p>
+
+        <div id="recurringList" class="mb-4 space-y-2"></div>
+
+        <div class="border-t border-white/10 pt-4">
+          <p class="text-xs font-bold text-[var(--ios-subtext)] uppercase tracking-wider mb-2.5">Создать регулярный платёж</p>
+          <div id="recType" data-type="expense" class="flex gap-2 mb-2.5">
+            <button id="recTypeExpenseBtn" type="button" onclick="setRecType('expense')" class="flex-1 bg-[var(--ios-red)] rounded-xl py-2 text-xs font-bold">Расход</button>
+            <button id="recTypeIncomeBtn" type="button" onclick="setRecType('income')" class="flex-1 bg-[#2C2C2E] rounded-xl py-2 text-xs font-bold">Доход</button>
+          </div>
+          <input id="recNameInput" type="text" placeholder="Название (например: ЖКХ, Аренда)" class="w-full bg-[#2C2C2E] rounded-xl px-3.5 py-3 mb-2.5 text-xs outline-none text-white">
+          <select id="recCategorySelect" class="w-full bg-[#2C2C2E] text-white rounded-xl px-3.5 py-3 mb-2.5 text-xs outline-none"></select>
+          <div class="flex gap-2 mb-3.5">
+            <div class="flex-1 flex items-center bg-[#2C2C2E] rounded-xl px-3.5 py-2.5">
+              <input id="recAmountInput" type="text" inputmode="decimal" placeholder="Сумма" class="flex-1 bg-transparent text-sm outline-none font-bold text-white">
+              <span id="recCurrencySymbol" class="text-xs text-[var(--ios-subtext)] font-semibold">₽</span>
+            </div>
+            <input id="recDayInput" type="number" min="1" max="28" placeholder="Число (1-28)" class="w-28 bg-[#2C2C2E] rounded-xl px-2 py-2.5 text-xs text-center outline-none text-white font-bold">
+          </div>
+          <button onclick="saveRecurring()" class="w-full bg-[var(--ios-blue)] font-bold text-xs rounded-xl py-3.5 ios-press">Сохранить регулярный платёж</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADVICE SHEET (РАБОТАЕТ В ВЫБРАННОЙ ВАЛЮТЕ) -->
+  <div id="adviceSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full sheet-transition max-w-md mx-auto">
+    <div class="bg-[#1C1C1E] rounded-t-[32px] border-t border-white/10 pb-[max(var(--safe-bottom),22px)] max-h-[85vh] overflow-y-auto shadow-2xl">
+      <div id="adviceHandle" class="pt-3 pb-2 flex justify-center touch-none"><div class="w-10 h-1 rounded-full bg-[#545458]"></div></div>
+      <div class="px-5 pt-1">
+        <div class="flex items-center justify-between mb-1">
+          <h2 class="text-lg font-black flex items-center gap-2">🧠 ИИ-советник</h2>
+          <button onclick="closeSheet('adviceSheet')" class="w-8 h-8 rounded-full bg-[#2C2C2E] text-[var(--ios-subtext)] flex items-center justify-center font-bold text-xs">✕</button>
+        </div>
+        <p id="adviceCurrencyNote" class="text-xs text-[var(--ios-subtext)] mb-3"></p>
+
+        <div id="adviceLoading" class="hidden flex-col items-center gap-2 py-8 text-xs text-[var(--ios-subtext)]">
+          <svg class="animate-spin" width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.5" stroke-opacity="0.3"/><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+          Анализирую расходы в выбранной валюте…
+        </div>
+        <div id="adviceContent" class="space-y-2.5 mb-4"></div>
+        <button onclick="askAiAdvice()" class="w-full bg-[var(--ios-blue)] font-bold text-xs rounded-xl py-3.5 ios-press">Сформировать новый разбор</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- INTERACTIVE QUICK GUIDE SHEET (БЫСТРЫЙ ГАЙД) -->
+  <div id="guideSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full sheet-transition max-w-md mx-auto">
+    <div class="bg-[#1C1C1E] rounded-t-[32px] border-t border-white/10 pb-[max(var(--safe-bottom),22px)] max-h-[88vh] overflow-y-auto shadow-2xl">
+      <div id="guideHandle" class="pt-3 pb-2 flex justify-center touch-none"><div class="w-10 h-1 rounded-full bg-[#545458]"></div></div>
+      <div class="px-5 pt-1">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-lg font-black flex items-center gap-2">📖 Быстрый гайд</h2>
+          <button onclick="closeSheet('guideSheet')" class="w-8 h-8 rounded-full bg-[#2C2C2E] text-[var(--ios-subtext)] flex items-center justify-center font-bold text-xs">✕</button>
+        </div>
+        <p class="text-xs text-[var(--ios-subtext)] mb-4">Все ключевые возможности приложения за 1 минуту</p>
+
+        <div class="space-y-3">
+          <div class="bg-[#2C2C2E] rounded-2xl p-4 flex gap-3.5">
+            <span class="text-2xl">👨‍👩‍👧</span>
+            <div>
+              <p class="text-xs font-bold text-white mb-1">1. Семейный бюджет и PIN</p>
+              <p class="text-[11px] text-[var(--ios-subtext)] leading-relaxed">Нажмите на бейдж семьи вверху. Скопируйте 6-значный цифровой PIN и введите его на телефоне партнера — бюджет мгновенно объединится.</p>
+            </div>
+          </div>
+
+          <div class="bg-[#2C2C2E] rounded-2xl p-4 flex gap-3.5">
+            <span class="text-2xl">💱</span>
+            <div>
+              <p class="text-xs font-bold text-white mb-1">2. Выбор валюты отображения</p>
+              <p class="text-[11px] text-[var(--ios-subtext)] leading-relaxed">Переключайтесь между ₽, $, €, Br в один клик. Все графики, баланс и советы ИИ мгновенно пересчитываются по живому курсу в вашу валюту.</p>
+            </div>
+          </div>
+
+          <div class="bg-[#2C2C2E] rounded-2xl p-4 flex gap-3.5">
+            <span class="text-2xl">📷</span>
+            <div>
+              <p class="text-xs font-bold text-white mb-1">3. Сканер чеков с автоподстановкой</p>
+              <p class="text-[11px] text-[var(--ios-subtext)] leading-relaxed">В меню «＋» нажмите «Сканировать чек». Камера распознает итоговую сумму и магазин сама.</p>
+            </div>
+          </div>
+
+          <div class="bg-[#2C2C2E] rounded-2xl p-4 flex gap-3.5">
+            <span class="text-2xl">🔁</span>
+            <div>
+              <p class="text-xs font-bold text-white mb-1">4. Регулярные платежи</p>
+              <p class="text-[11px] text-[var(--ios-subtext)] leading-relaxed">Внесите подписки или аренду с указанием дня месяца. Можно списать заранее кнопкой «Внести» прямо из списка.</p>
+            </div>
+          </div>
+
+          <div class="bg-[#2C2C2E] rounded-2xl p-4 flex gap-3.5">
+            <span class="text-2xl">🎯</span>
+            <div>
+              <p class="text-xs font-bold text-white mb-1">5. Совместные цели</p>
+              <p class="text-[11px] text-[var(--ios-subtext)] leading-relaxed">Копите вместе на отпуск или ремонт. Пополняйте цель в любое время — баланс списывается, а кольцо прогресса приближается к 100%.</p>
+            </div>
+          </div>
+        </div>
+
+        <button onclick="closeSheet('guideSheet')" class="w-full mt-4 bg-[var(--ios-blue)] font-bold text-xs rounded-xl py-3.5 ios-press">Понятно, к бюджету!</button>
       </div>
     </div>
   </div>
@@ -428,9 +539,9 @@
           <h2 class="text-lg font-black">Новая цель</h2>
           <button onclick="closeSheet('goalSheet')" class="w-8 h-8 rounded-full bg-[#2C2C2E] text-[var(--ios-subtext)] flex items-center justify-center font-bold text-xs ios-press">✕</button>
         </div>
-        <input id="goalNameInput" type="text" maxlength="40" placeholder="Название (например: Отпуск)" class="w-full bg-[#2C2C2E] rounded-2xl px-4 py-3.5 text-sm outline-none mb-3">
+        <input id="goalNameInput" type="text" maxlength="40" placeholder="Название (например: Отпуск)" class="w-full bg-[#2C2C2E] rounded-2xl px-4 py-3.5 text-sm outline-none mb-3 text-white">
         <div class="flex items-center bg-[#2C2C2E] rounded-2xl px-4 py-3.5 mb-5">
-          <input id="goalTargetInput" type="text" inputmode="decimal" placeholder="0" class="flex-1 bg-transparent text-sm font-bold outline-none">
+          <input id="goalTargetInput" type="text" inputmode="decimal" placeholder="0" class="flex-1 bg-transparent text-sm font-bold outline-none text-white">
           <span id="goalCurrencySymbol" class="text-[var(--ios-subtext)] font-semibold text-sm">₽</span>
         </div>
         <button onclick="saveGoal()" class="w-full bg-[var(--ios-blue)] font-bold text-sm rounded-2xl py-4 ios-press">Создать цель</button>
@@ -470,13 +581,13 @@
 
         <p class="text-xs font-bold text-[var(--ios-subtext)] uppercase tracking-wider mb-1 px-1">Зарплата в месяц</p>
         <div class="flex items-center bg-[#2C2C2E] rounded-2xl px-4 py-3 mb-3">
-          <input id="salaryInput" type="text" inputmode="decimal" placeholder="0" class="flex-1 bg-transparent text-sm font-semibold outline-none">
+          <input id="salaryInput" type="text" inputmode="decimal" placeholder="0" class="flex-1 bg-transparent text-sm font-semibold outline-none text-white">
           <span id="salaryCurrencySymbol" class="text-xs text-[var(--ios-subtext)]">₽</span>
         </div>
 
         <p class="text-xs font-bold text-[var(--ios-subtext)] uppercase tracking-wider mb-1 px-1">Лимит расходов в месяц</p>
         <div class="flex items-center bg-[#2C2C2E] rounded-2xl px-4 py-3 mb-3">
-          <input id="budgetInput" type="text" inputmode="decimal" placeholder="0 — без лимита" class="flex-1 bg-transparent text-sm font-semibold outline-none">
+          <input id="budgetInput" type="text" inputmode="decimal" placeholder="0 — без лимита" class="flex-1 bg-transparent text-sm font-semibold outline-none text-white">
           <span id="budgetCurrencySymbol" class="text-xs text-[var(--ios-subtext)]">₽</span>
         </div>
 
@@ -491,57 +602,8 @@
         </div>
 
         <button onclick="saveSalary()" class="w-full bg-[var(--ios-blue)] font-bold text-sm rounded-2xl py-3.5 mb-2.5 ios-press">Сохранить</button>
-        <button onclick="openTutorial()" class="w-full bg-[#2C2C2E] font-semibold text-xs rounded-2xl py-3 mb-2 ios-press">Обучение</button>
+        <button onclick="openGuideSheet()" class="w-full bg-[#2C2C2E] font-semibold text-xs rounded-2xl py-3 mb-2 ios-press text-[var(--ios-teal)]">📖 Быстрый гайд</button>
         <button onclick="handleLogout()" class="w-full bg-[#2C2C2E] text-[var(--ios-red)] font-semibold text-xs rounded-2xl py-3 ios-press">Выйти из профиля</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- RECURRING SHEET -->
-  <div id="recurringSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full sheet-transition max-w-md mx-auto">
-    <div class="bg-[#1C1C1E] rounded-t-[32px] border-t border-white/10 pb-[max(var(--safe-bottom),22px)] max-h-[85vh] overflow-y-auto">
-      <div id="recurringHandle" class="pt-3 pb-2 flex justify-center touch-none"><div class="w-10 h-1 rounded-full bg-[#545458]"></div></div>
-      <div class="px-5 pt-1">
-        <div class="flex items-center justify-between mb-3">
-          <h2 class="text-lg font-black">🔁 Регулярные платежи</h2>
-          <button onclick="closeSheet('recurringSheet')" class="w-8 h-8 rounded-full bg-[#2C2C2E] text-[var(--ios-subtext)] flex items-center justify-center font-bold text-xs">✕</button>
-        </div>
-        <div id="recurringList" class="mb-4"></div>
-        <div class="border-t border-white/10 pt-3">
-          <div id="recType" data-type="expense" class="flex gap-2 mb-2">
-            <button id="recTypeExpenseBtn" type="button" onclick="setRecType('expense')" class="flex-1 bg-[var(--ios-red)] rounded-xl py-2 text-xs font-bold">Расход</button>
-            <button id="recTypeIncomeBtn" type="button" onclick="setRecType('income')" class="flex-1 bg-[#2C2C2E] rounded-xl py-2 text-xs font-bold">Доход</button>
-          </div>
-          <input id="recNameInput" type="text" placeholder="Название (например: ЖКХ)" class="w-full bg-[#2C2C2E] rounded-xl px-3.5 py-2.5 mb-2 text-xs outline-none">
-          <select id="recCategorySelect" class="w-full bg-[#2C2C2E] rounded-xl px-3.5 py-2.5 mb-2 text-xs outline-none"></select>
-          <div class="flex gap-2 mb-3">
-            <div class="flex-1 flex items-center bg-[#2C2C2E] rounded-xl px-3 py-2">
-              <input id="recAmountInput" type="text" inputmode="decimal" placeholder="Сумма" class="flex-1 bg-transparent text-xs outline-none font-bold">
-              <span id="recCurrencySymbol" class="text-xs text-[var(--ios-subtext)]">₽</span>
-            </div>
-            <input id="recDayInput" type="number" min="1" max="28" placeholder="День (1-28)" class="w-24 bg-[#2C2C2E] rounded-xl px-2 py-2 text-xs text-center outline-none">
-          </div>
-          <button onclick="saveRecurring()" class="w-full bg-[var(--ios-blue)] font-bold text-xs rounded-xl py-3 ios-press">Сохранить платёж</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ADVICE SHEET -->
-  <div id="adviceSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full sheet-transition max-w-md mx-auto">
-    <div class="bg-[#1C1C1E] rounded-t-[32px] border-t border-white/10 pb-[max(var(--safe-bottom),22px)] max-h-[80vh] overflow-y-auto">
-      <div id="adviceHandle" class="pt-3 pb-2 flex justify-center touch-none"><div class="w-10 h-1 rounded-full bg-[#545458]"></div></div>
-      <div class="px-5 pt-1">
-        <div class="flex items-center justify-between mb-3">
-          <h2 class="text-lg font-black">🧠 Советы ИИ</h2>
-          <button onclick="closeSheet('adviceSheet')" class="w-8 h-8 rounded-full bg-[#2C2C2E] text-[var(--ios-subtext)] flex items-center justify-center font-bold text-xs">✕</button>
-        </div>
-        <div id="adviceLoading" class="hidden flex-col items-center gap-2 py-8 text-xs text-[var(--ios-subtext)]">
-          <svg class="animate-spin" width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.5" stroke-opacity="0.3"/><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
-          ИИ анализирует семейный бюджет…
-        </div>
-        <div id="adviceContent" class="space-y-2"></div>
-        <button onclick="askAiAdvice()" class="w-full mt-3 bg-[var(--ios-blue)] font-bold text-xs rounded-xl py-3 ios-press">Обновить рекомендации</button>
       </div>
     </div>
   </div>
@@ -581,36 +643,6 @@
     </div>
   </div>
 
-  <!-- TUTORIAL -->
-  <div id="tutorialSheet" class="fixed inset-0 z-[110] hidden items-center justify-center px-6 bg-black/85">
-    <div class="w-full max-w-xs bg-[#1C1C1E] rounded-3xl p-6 text-center border border-white/10 slide-up">
-      <p id="tutStepEmoji" class="text-5xl mb-2">🐷</p>
-      <h2 id="tutStepTitle" class="text-base font-black mb-1"></h2>
-      <p id="tutStepText" class="text-xs text-[var(--ios-subtext)] leading-relaxed mb-4"></p>
-      <div class="flex justify-center gap-1.5 mb-4">
-        <span id="tutDot0" class="w-1.5 h-1.5 rounded-full bg-[var(--ios-blue)]"></span>
-        <span id="tutDot1" class="w-1.5 h-1.5 rounded-full bg-white/20"></span>
-        <span id="tutDot2" class="w-1.5 h-1.5 rounded-full bg-white/20"></span>
-        <span id="tutDot3" class="w-1.5 h-1.5 rounded-full bg-white/20"></span>
-        <span id="tutDot4" class="w-1.5 h-1.5 rounded-full bg-white/20"></span>
-      </div>
-      <button onclick="nextTutorialStep()" id="tutNextBtn" class="w-full bg-[var(--ios-blue)] font-bold text-xs py-3 rounded-xl mb-1.5 ios-press">Дальше</button>
-      <button onclick="closeTutorial()" class="w-full text-xs text-[var(--ios-subtext)] py-1">Пропустить</button>
-    </div>
-  </div>
-
-  <!-- CLARIFY SHEET -->
-  <div id="clarifySheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full sheet-transition max-w-md mx-auto">
-    <div class="bg-[#1C1C1E] rounded-t-[32px] border-t border-white/10 pb-[max(var(--safe-bottom),22px)] px-5 pt-3 text-center">
-      <p class="text-3xl mb-1">🤔</p>
-      <p id="clarifyQuestion" class="text-xs mb-4"></p>
-      <div class="flex gap-2">
-        <button onclick="clarifyAnswer(true)" class="flex-1 bg-[var(--ios-green)] text-black font-bold text-xs py-3 rounded-xl">Верно</button>
-        <button onclick="clarifyAnswer(false)" class="flex-1 bg-[#2C2C2E] text-white font-semibold text-xs py-3 rounded-xl">Нет</button>
-      </div>
-    </div>
-  </div>
-
   <!-- TOAST CONTAINER -->
   <div id="toastContainer" class="fixed left-0 right-0 bottom-24 flex flex-col items-center gap-2 z-[60] pointer-events-none px-6"></div>
 
@@ -642,15 +674,14 @@
     { name: 'Другое', icon: '💰', color: '#FFD60A' },
   ];
   const SAVING_CATEGORY = { name: 'Накопления', icon: '🐷', color: '#FFD60A' };
-  const ACHIEVEMENT_THRESHOLDS = [1000, 5000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000];
   const MEMBER_COLORS = ['#0A84FF', '#30D158', '#FF9F0A', '#BF5AF2', '#64D2FF', '#FF453A'];
 
   const CHANGELOG = [
-    { version: '5.0', date: '06.09.2026', items: [
-      'Устранена ошибка со схемой profiles (колонка email)',
-      'Премиальный FinTech интерфейс в стиле iOS (Apple Wallet)',
-      'Пружинные микроанимации и вибро-отклик кнопок',
-      'Бессрочный 6-значный семейный PIN и надежная двойная синхронизация'
+    { version: '5.2', date: '06.09.2026', items: [
+      'Починены регулярные платежи: корректные категории и мгновенное списание',
+      'ИИ-советник теперь рассчитывает аналитику строго в вашей выбранной валюте',
+      'Добавлен быстрый иллюстрированный гайд по ключевым функциям',
+      'Полная совместимость со схемой Supabase без привязки к колонке email'
     ]}
   ];
 
@@ -672,7 +703,7 @@
   function friendlyDbError(err) {
     if (!err) return 'Неизвестная ошибка';
     const code = err.code || (err.details && err.details.code);
-    if (code === '42501') return 'Действие заблокировано в Supabase. Отключите RLS для таблиц.';
+    if (code === '42501') return 'Действие ограничено в Supabase. Отключите RLS для таблиц.';
     if (code === 'PGRST116') return '';
     return err.message || 'Ошибка синхронизации';
   }
@@ -712,11 +743,10 @@
     location.reload();
   }
 
-  // ---------- Загрузка без обращения к несуществующей колонке email ----------
+  // ---------- Загрузка данных без колонки email ----------
   async function loadUserData(userId) {
     let profileRes = await sb.from('profiles').select('*').eq('id', userId).maybeSingle();
     
-    // Безопасный upsert без колонки email
     if (!profileRes.data) {
       await sb.from('profiles').upsert({ id: userId });
       profileRes = await sb.from('profiles').select('*').eq('id', userId).maybeSingle();
@@ -742,7 +772,6 @@
       if (newHh && newHh[0]) {
         hhRow = newHh[0];
         realHhId = hhRow.id;
-        // Сохраняем household_id без поля email
         await sb.from('profiles').upsert({ id: userId, household_id: realHhId });
       }
     } else if ((!hhRow.invite_code || !/^\d{6}$/.test(hhRow.invite_code)) && hhRow.owner_id === userId) {
@@ -754,6 +783,7 @@
     currentHousehold = hhRow || { id: realHhId || 'offline_hh', invite_code: '------' };
 
     await fetchHouseholdData(realHhId || currentHousehold.id);
+    await applyDueRecurringPayments();
     setupRealtime(realHhId || currentHousehold.id);
   }
 
@@ -772,7 +802,13 @@
     if (goalsRes.data) {
       goals = goalsRes.data.map(g => ({ id: g.id, name: g.name, target: Number(g.target), collected: Number(g.collected), date: new Date(g.created_at).getTime() }));
     }
-    if (recRes.data) recurringPayments = recRes.data;
+    if (recRes.data) {
+      recurringPayments = recRes.data;
+    } else {
+      try {
+        recurringPayments = JSON.parse(localStorage.getItem('piggy_recurring_' + hhId)) || [];
+      } catch(e) {}
+    }
     if (membersRes.data && membersRes.data.length) householdMembers = membersRes.data;
     else if (currentUser) householdMembers = [{ id: currentUser.id }];
 
@@ -790,7 +826,6 @@
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `household_id=eq.${hhId}` }, () => fetchHouseholdData(hhId))
       .subscribe();
 
-    // Автоопрос каждые 4 секунды для надежности
     syncInterval = setInterval(() => {
       if (currentHousehold && currentHousehold.id) fetchHouseholdData(currentHousehold.id);
     }, 4000);
@@ -806,7 +841,7 @@
     if (!el) return;
     el.classList.remove('hidden'); el.classList.add('flex');
     clearTimeout(flashSync._t);
-    flashSync._t = setTimeout(() => { el.classList.add('hidden'); el.classList.remove('flex'); }, 2000);
+    flashSync._t = setTimeout(() => { el.classList.add('hidden'); el.classList.remove('flex'); }, 1800);
   }
 
   function memberColor(id) {
@@ -863,7 +898,6 @@
     if (error) { showToast(friendlyDbError(error), { error: true }); return; }
     if (!hh) { showToast('Семья с таким PIN не найдена', { error: true }); return; }
 
-    // Безопасное сохранение без обращения к email
     const { error: updErr } = await sb.from('profiles').upsert({ id: currentUser.id, household_id: hh.id });
     if (updErr) { showToast(friendlyDbError(updErr), { error: true }); return; }
 
@@ -871,7 +905,252 @@
     setTimeout(() => location.reload(), 600);
   }
 
-  // ---------- Добавление операций ----------
+  // ---------- РЕГУЛЯРНЫЕ ПЛАТЕЖИ (ИСПРАВЛЕНО) ----------
+  function openRecurringSheet() {
+    document.getElementById('recCurrencySymbol').textContent = CURRENCIES[displayCurrency].symbol;
+    setRecType('expense');
+    renderRecurringList();
+    openSheet('recurringSheet');
+  }
+
+  function setRecType(type) {
+    document.getElementById('recType').dataset.type = type;
+    document.getElementById('recTypeIncomeBtn').className = `flex-1 rounded-xl py-2 text-xs font-bold transition-colors ${type === 'income' ? 'bg-[var(--ios-green)] text-black' : 'bg-[#2C2C2E] text-[var(--ios-subtext)]'}`;
+    document.getElementById('recTypeExpenseBtn').className = `flex-1 rounded-xl py-2 text-xs font-bold transition-colors ${type === 'expense' ? 'bg-[var(--ios-red)] text-white' : 'bg-[#2C2C2E] text-[var(--ios-subtext)]'}`;
+    
+    const cats = type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+    const select = document.getElementById('recCategorySelect');
+    select.innerHTML = cats.map(c => `<option value="${c.name}">${c.icon} ${c.name}</option>`).join('');
+  }
+
+  function renderRecurringList() {
+    const el = document.getElementById('recurringList');
+    if (!recurringPayments.length) {
+      el.innerHTML = `<div class="bg-[#2C2C2E]/60 rounded-2xl p-4 text-center text-xs text-[var(--ios-subtext)]">Нет регулярных списаний. Добавьте аренду, подписки или ЖКХ ниже.</div>`;
+      return;
+    }
+    el.innerHTML = recurringPayments.map(rp => {
+      const isExp = rp.type === 'expense';
+      return `<div class="flex items-center justify-between bg-[#2C2C2E] rounded-2xl p-3.5 border border-white/5">
+        <div class="min-w-0 flex-1 pr-2">
+          <p class="text-xs font-black truncate">${escapeHtml(rp.name)}</p>
+          <p class="text-[10px] text-[var(--ios-subtext)] font-semibold mt-0.5">${rp.day_of_month}-го числа · ${escapeHtml(rp.category)}</p>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <span class="text-xs font-black ${isExp ? 'text-[var(--ios-red)]' : 'text-[var(--ios-green)]'}">${isExp ? '-' : '+'}${fmRaw(Number(rp.amount), rp.currency || displayCurrency)}</span>
+          <button onclick="triggerRecurringNow('${rp.id}')" class="bg-white/10 text-[var(--ios-teal)] font-bold text-[10px] px-2 py-1.5 rounded-lg ios-press">Списать</button>
+          <button onclick="deleteRecurring('${rp.id}')" class="text-[var(--ios-subtext)] p-1 text-xs hover:text-[var(--ios-red)]">✕</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  async function saveRecurring() {
+    const name = document.getElementById('recNameInput').value.trim();
+    const amount = parseFloat(document.getElementById('recAmountInput').value);
+    const day = parseInt(document.getElementById('recDayInput').value);
+    if (!name || !(amount > 0) || !(day >= 1 && day <= 28)) {
+      showToast('Заполните все поля (день от 1 до 28)', { error: true });
+      return;
+    }
+    const type = document.getElementById('recType').dataset.type || 'expense';
+    const cats = type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+    const category = document.getElementById('recCategorySelect').value || cats[0].name;
+
+    const row = {
+      id: 'rec_' + Date.now(),
+      user_id: currentUser.id,
+      household_id: currentHousehold.id,
+      name,
+      type,
+      category,
+      amount,
+      currency: displayCurrency,
+      day_of_month: day
+    };
+
+    // Сохраняем в Supabase и локальный кэш
+    const { data } = await sb.from('recurring_payments').insert(row).select();
+    if (data && data[0]) {
+      recurringPayments.push(data[0]);
+    } else {
+      recurringPayments.push(row);
+      localStorage.setItem('piggy_recurring_' + currentHousehold.id, JSON.stringify(recurringPayments));
+    }
+
+    document.getElementById('recNameInput').value = '';
+    document.getElementById('recAmountInput').value = '';
+    document.getElementById('recDayInput').value = '';
+    renderRecurringList();
+    showToast('Регулярный платёж сохранён 🔁');
+  }
+
+  async function triggerRecurringNow(id) {
+    const rp = recurringPayments.find(r => r.id === id);
+    if (!rp) return;
+    const amountRUB = convert(Number(rp.amount), rp.currency || displayCurrency, 'RUB');
+    
+    await sb.from('transactions').insert({
+      user_id: currentUser.id,
+      household_id: currentHousehold.id,
+      type: rp.type,
+      category: rp.category,
+      amount: amountRUB,
+      entry_amount: rp.amount,
+      entry_currency: rp.currency || displayCurrency,
+      comment: `Списание: ${rp.name}`
+    });
+
+    transactions.unshift({
+      id: 'rec_tx_' + Date.now(),
+      userId: currentUser.id,
+      type: rp.type,
+      category: rp.category,
+      amount: amountRUB,
+      entryAmount: rp.amount,
+      entryCurrency: rp.currency || displayCurrency,
+      comment: `Списание: ${rp.name}`,
+      isSaving: false,
+      date: Date.now()
+    });
+
+    renderAll();
+    showToast(`Платёж «${rp.name}» записан в бюджет`);
+  }
+
+  async function deleteRecurring(id) {
+    recurringPayments = recurringPayments.filter(r => r.id !== id);
+    localStorage.setItem('piggy_recurring_' + currentHousehold.id, JSON.stringify(recurringPayments));
+    renderRecurringList();
+    await sb.from('recurring_payments').delete().eq('id', id);
+    showToast('Платёж удалён');
+  }
+
+  async function applyDueRecurringPayments() {
+    if (!recurringPayments.length) return;
+    const now = new Date();
+    const monthKey = `${now.getFullYear()}-${now.getMonth()}`;
+    for (const rp of recurringPayments) {
+      if (rp.last_applied_month === monthKey) continue;
+      if (now.getDate() < rp.day_of_month) continue;
+      const amountRUB = convert(Number(rp.amount), rp.currency || displayCurrency, 'RUB');
+      await sb.from('transactions').insert({
+        user_id: currentUser.id,
+        household_id: currentHousehold.id,
+        type: rp.type,
+        category: rp.category,
+        amount: amountRUB,
+        entry_amount: rp.amount,
+        entry_currency: rp.currency || displayCurrency,
+        comment: `Авто-списание: ${rp.name}`
+      });
+      rp.last_applied_month = monthKey;
+      await sb.from('recurring_payments').update({ last_applied_month: monthKey }).eq('id', rp.id);
+    }
+  }
+
+  // ---------- ИИ-СОВЕТНИК С РАСЧЕТОМ В ВЫБРАННОЙ ВАЛЮТЕ ----------
+  function openAdviceSheet() {
+    const cur = CURRENCIES[displayCurrency];
+    document.getElementById('adviceCurrencyNote').textContent = `Все расчёты и лимиты приведены в валюте: ${cur.name} (${cur.symbol})`;
+    openSheet('adviceSheet');
+    if (!document.getElementById('adviceContent').innerHTML) askAiAdvice();
+  }
+
+  async function askAiAdvice() {
+    const loading = document.getElementById('adviceLoading');
+    const content = document.getElementById('adviceContent');
+    loading.classList.remove('hidden'); loading.classList.add('flex');
+    content.innerHTML = '';
+
+    const curSymbol = CURRENCIES[displayCurrency].symbol;
+    const now = new Date();
+    const thisMonthTx = transactions.filter(t => new Date(t.date).getMonth() === now.getMonth() && new Date(t.date).getFullYear() === now.getFullYear());
+
+    const totalIncomeCur = convert(calcIncome(), 'RUB', displayCurrency);
+    const totalExpenseCur = convert(calcExpense(), 'RUB', displayCurrency);
+    const budgetCur = userMonthlyBudget ? convert(userMonthlyBudget, 'RUB', displayCurrency) : 0;
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const daysLeft = daysInMonth - now.getDate() + 1;
+
+    // Группировка трат по категориям
+    const byCat = {};
+    thisMonthTx.filter(t => t.type === 'expense').forEach(t => {
+      const key = t.isSaving ? 'Накопления' : t.category;
+      byCat[key] = (byCat[key] || 0) + convert(t.amount, 'RUB', displayCurrency);
+    });
+    const sortedCats = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
+
+    setTimeout(() => {
+      loading.classList.add('hidden'); loading.classList.remove('flex');
+      
+      const tips = [];
+
+      // Совет 1: Топ-категория трат
+      if (sortedCats.length > 0) {
+        const top = sortedCats[0];
+        const pct = totalExpenseCur > 0 ? Math.round((top[1] / totalExpenseCur) * 100) : 0;
+        tips.push({
+          badge: '📊 Главная статья расходов',
+          title: `${top[0]} — ${Math.round(top[1])} ${curSymbol} (${pct}% всех трат)`,
+          text: `Это наибольшая нагрузка на семейный бюджет в этом месяце. Если сократить спонтанные покупки в этой категории всего на 15%, семья сбережет около ${Math.round(top[1] * 0.15)} ${curSymbol}.`
+        });
+      }
+
+      // Совет 2: Месячный бюджет и лимиты
+      if (budgetCur > 0) {
+        const remaining = Math.max(0, budgetCur - totalExpenseCur);
+        const perDay = Math.round(remaining / (daysLeft > 0 ? daysLeft : 1));
+        const usedPct = Math.round((totalExpenseCur / budgetCur) * 100);
+        tips.push({
+          badge: '⚡ Контроль лимита',
+          title: `Использовано ${usedPct}% бюджета (${Math.round(totalExpenseCur)} из ${Math.round(budgetCur)} ${curSymbol})`,
+          text: `До конца месяца осталось ${daysLeft} дн. Рекомендуемый безопасный лимит трат для семьи: не более ${perDay} ${curSymbol} в день.`
+        });
+      } else {
+        tips.push({
+          badge: '💡 Рекомендация',
+          title: 'Установите месячный лимит бюджета',
+          text: `Перейдите в Настройки (⚙️) и укажите комфортный лимит расходов в ${curSymbol}. ИИ сможет автоматически рассчитывать ваш дневной лимит.`
+        });
+      }
+
+      // Совет 3: Накопления и цели
+      const totalSavingsCur = goals.reduce((s, g) => s + convert(g.collected, 'RUB', displayCurrency), 0);
+      const totalTargetCur = goals.reduce((s, g) => s + convert(g.target, 'RUB', displayCurrency), 0);
+      if (goals.length > 0) {
+        tips.push({
+          badge: '🎯 Семейные копилки',
+          title: `Накоплено ${Math.round(totalSavingsCur)} из ${Math.round(totalTargetCur)} ${curSymbol}`,
+          text: `У семьи активно ${goals.length} целей. Откладывая хотя бы 10% от каждого нового дохода, вы ускорите достижение общих целей в 2 раза.`
+        });
+      }
+
+      // Совет 4: Регулярные списания
+      if (recurringPayments.length > 0) {
+        const totalRecCur = recurringPayments.reduce((s, r) => s + convert(Number(r.amount), r.currency || displayCurrency, displayCurrency), 0);
+        tips.push({
+          badge: '🔁 Подписки и счета',
+          title: `Обязательные платежи: ${Math.round(totalRecCur)} ${curSymbol} / месяц`,
+          text: `У вас настроено ${recurringPayments.length} регулярных списаний. Убедитесь, что на балансе к нужным датам остается эта сумма.`
+        });
+      }
+
+      content.innerHTML = tips.map(tip => `
+        <div class="bg-[#2C2C2E] rounded-2xl p-4 border border-white/5">
+          <span class="text-[10px] font-extrabold uppercase tracking-wider text-[var(--ios-teal)] bg-white/5 px-2.5 py-1 rounded-md mb-2 inline-block">${tip.badge}</span>
+          <p class="text-xs font-black text-white mb-1">${tip.title}</p>
+          <p class="text-[11px] text-[var(--ios-subtext)] leading-relaxed">${tip.text}</p>
+        </div>`).join('');
+    }, 450);
+  }
+
+  // ---------- БЫСТРЫЙ ГАЙД ----------
+  function openGuideSheet() {
+    openSheet('guideSheet');
+  }
+
+  // ---------- Операции, цели и UI ----------
   async function saveTransaction() {
     const entered = parseFloat(document.getElementById('amountInput').value);
     if (!(entered > 0) || !selectedCategory) return;
@@ -909,11 +1188,7 @@
 
     const { data, error } = await sb.from('transactions').insert(row).select();
     if (error) {
-      if (error.code === '42501') {
-        showToast('Заблокировано RLS. Отключите RLS в Supabase.', { error: true });
-      } else {
-        showToast(friendlyDbError(error), { error: true });
-      }
+      if (error.code === '42501') showToast('Заблокировано RLS. Отключите RLS в Supabase.', { error: true });
       return;
     }
 
@@ -977,8 +1252,7 @@
     if (!confirm('Удалить эту цель?')) return;
     goals = goals.filter(g => g.id !== id);
     renderGoals();
-    const { error } = await sb.from('goals').delete().eq('id', id);
-    if (error) showToast(friendlyDbError(error), { error: true });
+    await sb.from('goals').delete().eq('id', id);
   }
 
   async function saveTopUp() {
@@ -1029,7 +1303,7 @@
     showToast(newlyDone ? `🎉 Цель «${g.name}» достигнута!` : `Цель пополнена`);
   }
 
-  // ---------- State & Setup ----------
+  // ---------- State & App Setup ----------
   let transactions = [];
   let goals = [];
   let currentTab = 'home';
@@ -1431,7 +1705,7 @@
         }
       } catch(e) {
         status.classList.add('hidden'); status.classList.remove('flex');
-        showToast('Ошибка ИИ-сканера', { error: true });
+        showToast('Ошибка сканера чеков', { error: true });
       }
     };
     reader.readAsDataURL(blob);
