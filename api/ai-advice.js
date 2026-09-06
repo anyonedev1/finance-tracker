@@ -45,12 +45,21 @@ export default async function handler(req, res) {
     if (!aiRes.ok) return res.status(502).json({ error: data.error?.message || 'Ошибка ИИ' });
 
     const text = data.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '';
-    const cleaned = text.replace(/```json|```/g, '').trim();
-    let parsed;
-    try { parsed = JSON.parse(cleaned); } catch (e) { return res.status(502).json({ error: 'Не удалось разобрать ответ ИИ' }); }
+    const parsed = extractJson(text);
+    if (!parsed) return res.status(502).json({ error: 'Не удалось разобрать ответ ИИ: ' + text.slice(0, 200) });
 
     return res.status(200).json(parsed);
   } catch (err) {
     return res.status(500).json({ error: err.message || 'Внутренняя ошибка' });
   }
+}
+
+function extractJson(text) {
+  if (!text) return null;
+  let cleaned = text.replace(/```json|```/gi, '').trim();
+  try { return JSON.parse(cleaned); } catch (e) { /* пробуем достать блок вручную */ }
+  const start = cleaned.indexOf('{');
+  const end = cleaned.lastIndexOf('}');
+  if (start === -1 || end === -1 || end <= start) return null;
+  try { return JSON.parse(cleaned.slice(start, end + 1)); } catch (e) { return null; }
 }
