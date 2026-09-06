@@ -3,16 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Копилка — Трекер расходов</title>
-<meta name="description" content="Умная копилка и трекер расходов с целями накоплений, мультивалютностью и сканером чеков">
+<title>Копилка — Семейный трекер расходов</title>
+<meta name="description" content="Умная семейная копилка и трекер расходов с онлайн-синхронизацией, целями и сканером чеков">
 
-<!-- iOS PWA meta tags -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Копилка">
 <meta name="apple-touch-fullscreen" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#07070b">
 <meta name="format-detection" content="telephone=no">
 <link rel="apple-touch-icon" href="data:image/png;base64,__ICON_BASE64__">
 <link rel="icon" type="image/png" href="data:image/png;base64,__ICON_BASE64__">
@@ -20,30 +19,36 @@
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
 <style>
   :root{
     --safe-top: env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
-    /* iPhone models with a Dynamic Island or notch report a large safe-area-inset-top
-       (~59px on Dynamic Island models, ~47-51px on notch models). We add a small extra
-       margin on top of that so the header clears the status bar AND the Dynamic Island /
-       camera housing comfortably, the way native iOS apps space their nav bar. */
     --header-clearance: calc(var(--safe-top) + 8px);
+    --accent: #6C5CE7;
+    --accent-2: #00D9C0;
+    --bg-0: #07070b;
+    --bg-1: #101018;
+    --card: rgba(255,255,255,0.055);
+    --card-border: rgba(255,255,255,0.09);
   }
   * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-  html, body { background:#000; height:100%; overscroll-behavior-y: none; }
+  html, body { background:var(--bg-0); min-height:100dvh; height:100dvh; overscroll-behavior-y: none; color:#fff; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     position: relative;
+    overflow-x: hidden;
   }
   body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background: radial-gradient(circle at 50% -10%, rgba(255,255,255,0.07), transparent 55%);
-    pointer-events: none;
-    z-index: 0;
+    content:'';
+    position: fixed; inset:0;
+    background:
+      radial-gradient(circle at 15% -10%, rgba(108,92,231,0.28), transparent 45%),
+      radial-gradient(circle at 100% 10%, rgba(0,217,192,0.16), transparent 40%),
+      radial-gradient(circle at 50% 120%, rgba(108,92,231,0.12), transparent 50%);
+    pointer-events:none; z-index:0;
   }
   input, textarea, select, button { font-family: inherit; font-size: 16px; }
   ::-webkit-scrollbar { display: none; }
@@ -52,29 +57,44 @@
   .touch-none { touch-action: none; }
   input::placeholder { color:#8E8E93; }
 
-  /* iOS system type scale, used for consistent hierarchy across the new header/sheets */
-  .t-largetitle{ font-size:34px; font-weight:700; letter-spacing:-0.02em; }
-  .t-title1{ font-size:28px; font-weight:700; letter-spacing:-0.02em; }
-  .t-title2{ font-size:22px; font-weight:700; letter-spacing:-0.01em; }
-  .t-title3{ font-size:20px; font-weight:600; }
-  .t-headline{ font-size:17px; font-weight:600; }
+  .glass{
+    background: var(--card);
+    backdrop-filter: blur(22px) saturate(180%);
+    -webkit-backdrop-filter: blur(22px) saturate(180%);
+    border: 1px solid var(--card-border);
+  }
+  .glass-pill{
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .grad-accent{ background: linear-gradient(135deg, var(--accent), #8A7CFF); }
+  .grad-teal{ background: linear-gradient(135deg, var(--accent-2), #37E0C9); }
+
+  .t-largetitle{ font-size:32px; font-weight:800; letter-spacing:-0.02em; }
+  .t-title1{ font-size:26px; font-weight:800; letter-spacing:-0.02em; }
+  .t-title2{ font-size:21px; font-weight:700; letter-spacing:-0.01em; }
+  .t-title3{ font-size:18px; font-weight:700; }
+  .t-headline{ font-size:16px; font-weight:600; }
   .t-caption1{ font-size:12px; font-weight:500; }
 
   .spring-tap{ transition: transform .15s cubic-bezier(.34,1.56,.64,1); }
   .spring-tap:active{ transform: scale(.94); }
 
-  @keyframes cardEnter { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
-  .card-enter { animation: cardEnter .4s ease both; }
+  @keyframes cardEnter { from { opacity:0; transform: translateY(10px) scale(.98); } to { opacity:1; transform: translateY(0) scale(1); } }
+  .card-enter { animation: cardEnter .42s cubic-bezier(.22,1,.36,1) both; }
+
+  @keyframes avatarPop { from{opacity:0; transform:scale(.4) translateY(4px);} to{opacity:1; transform:scale(1) translateY(0);} }
+  .avatar-pop{ animation: avatarPop .38s cubic-bezier(.34,1.56,.64,1) both; }
 
   @keyframes toastIn { from { opacity:0; transform: translateY(16px) scale(.92);} to {opacity:1; transform: translateY(0) scale(1);} }
   @keyframes toastOut { to { opacity:0; transform: translateY(8px) scale(.92);} }
   .toast-in { animation: toastIn .32s cubic-bezier(.34,1.56,.64,1) both; }
   .toast-out { animation: toastOut .22s ease both; }
 
-  @keyframes tabIn { from { opacity:0; transform: translateY(7px);} to { opacity:1; transform: translateY(0);} }
-  .tab-anim { animation: tabIn .32s cubic-bezier(.22,1,.36,1) both; }
+  @keyframes tabIn { from { opacity:0; transform: translateY(8px);} to { opacity:1; transform: translateY(0);} }
+  .tab-anim { animation: tabIn .34s cubic-bezier(.22,1,.36,1) both; }
 
-  @keyframes goalPulse { 0%{transform:scale(1);} 35%{transform:scale(1.035); box-shadow:0 0 0 3px rgba(255,214,10,0.35);} 70%{transform:scale(0.99);} 100%{transform:scale(1); box-shadow:0 0 0 0 rgba(255,214,10,0);} }
+  @keyframes goalPulse { 0%{transform:scale(1);} 35%{transform:scale(1.035); box-shadow:0 0 0 3px rgba(0,217,192,0.35);} 70%{transform:scale(0.99);} 100%{transform:scale(1); box-shadow:0 0 0 0 rgba(0,217,192,0);} }
   .goal-celebrate { animation: goalPulse .7s ease; }
 
   @keyframes popIn { from { opacity:0; transform: scale(.9);} to { opacity:1; transform: scale(1);} }
@@ -85,7 +105,7 @@
   .sheet-spring { transition-timing-function: cubic-bezier(.34,1.56,.64,1); }
 
   @keyframes shimmer { 0%{background-position:-200% 0;} 100%{background-position:200% 0;} }
-  .shimmer-text { background:linear-gradient(90deg,#fff 25%,#FFD60A 50%,#fff 75%); background-size:200% auto; -webkit-background-clip:text; background-clip:text; color:transparent; animation: shimmer 2.4s linear infinite; }
+  .shimmer-text { background:linear-gradient(90deg,#fff 20%, var(--accent-2) 50%, #fff 80%); background-size:200% auto; -webkit-background-clip:text; background-clip:text; color:transparent; animation: shimmer 2.6s linear infinite; }
 
   @keyframes floatSlow { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-6px);} }
   .float-slow { animation: floatSlow 3.5s ease-in-out infinite; }
@@ -93,22 +113,28 @@
   @keyframes fadeSlideUp { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
   .fade-slide-up { animation: fadeSlideUp .35s cubic-bezier(.22,1,.36,1) both; }
 
+  @keyframes pulseRing { 0%{ box-shadow:0 0 0 0 rgba(0,217,192,0.55);} 100%{ box-shadow:0 0 0 10px rgba(0,217,192,0);} }
+  .live-pulse{ animation: pulseRing 1.4s ease-out; }
+
+  @keyframes syncFlash { 0%{ background-color: rgba(0,217,192,0.28);} 100%{ background-color: transparent; } }
+  .sync-flash{ animation: syncFlash 1.1s ease-out; }
+
   @media (prefers-reduced-motion: reduce) {
-    .card-enter, .toast-in, .toast-out, .tab-anim, .goal-celebrate, .pop-in, .ring-pop { animation: none !important; }
+    .card-enter, .toast-in, .toast-out, .tab-anim, .goal-celebrate, .pop-in, .ring-pop, .avatar-pop, .live-pulse, .sync-flash { animation: none !important; }
     * { transition-duration: 0.001ms !important; }
   }
 </style>
 </head>
-<body class="bg-black text-white min-h-screen">
+<body class="min-h-[100dvh]">
 
   <!-- AUTH SCREEN -->
-  <div id="authScreen" class="fixed inset-0 z-[100] flex items-center justify-center px-6 overflow-hidden" style="background: radial-gradient(circle at 30% 20%, #1a2e1f 0%, #000 55%), #000;">
-    <div class="absolute -top-20 -left-20 w-72 h-72 rounded-full bg-[#30D158]/20 blur-3xl"></div>
-    <div class="absolute -bottom-24 -right-16 w-80 h-80 rounded-full bg-[#0A84FF]/20 blur-3xl"></div>
-    <form id="authForm" class="relative w-full max-w-sm bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-3xl px-6 py-8 shadow-2xl" onsubmit="return handleAuthSubmit(event)">
+  <div id="authScreen" class="fixed inset-0 z-[100] flex items-center justify-center px-6 overflow-y-auto">
+    <div class="absolute -top-20 -left-20 w-72 h-72 rounded-full bg-[var(--accent)]/25 blur-3xl"></div>
+    <div class="absolute -bottom-24 -right-16 w-80 h-80 rounded-full bg-[var(--accent-2)]/20 blur-3xl"></div>
+    <form id="authForm" class="relative w-full max-w-sm glass rounded-3xl px-6 py-8 shadow-2xl my-auto" onsubmit="return handleAuthSubmit(event)">
       <p class="text-5xl text-center mb-2 float-slow">🐷</p>
       <h1 class="t-title2 text-center mb-1">Копилка</h1>
-      <p class="text-center text-xs text-[#8E8E93] mb-6">Твои финансы под контролем</p>
+      <p class="text-center text-xs text-[#9a9aa5] mb-6">Семейный бюджет под контролем</p>
 
       <button type="button" onclick="handleGoogleLogin()" class="w-full flex items-center justify-center gap-2.5 bg-white text-black rounded-2xl py-3.5 font-semibold text-[15px] spring-tap mb-4">
         <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.9 32.6 29.4 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.4 6.1 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.9 19 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.4 6.1 29.5 4 24 4c-7.7 0-14.3 4.4-17.7 10.7z"/><path fill="#4CAF50" d="M24 44c5.3 0 10.1-2 13.7-5.4l-6.3-5.3C29.4 35.1 26.8 36 24 36c-5.3 0-9.8-3.4-11.4-8.1l-6.5 5C9.6 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.6l6.3 5.3C40.9 36 44 30.8 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>
@@ -117,76 +143,85 @@
 
       <div class="flex items-center gap-3 mb-4">
         <div class="h-px bg-white/10 flex-1"></div>
-        <span class="text-[11px] text-[#8E8E93]">или email</span>
+        <span class="text-[11px] text-[#9a9aa5]">или email</span>
         <div class="h-px bg-white/10 flex-1"></div>
       </div>
 
       <input id="authEmail" type="email" required placeholder="Email" autocomplete="email"
-        class="w-full bg-white/5 rounded-xl px-4 py-3.5 mb-3 outline-none focus:ring-2 focus:ring-[#0A84FF]/40 focus:bg-white/[0.07] transition-all">
+        class="w-full bg-white/5 rounded-xl px-4 py-3.5 mb-3 outline-none focus:ring-2 focus:ring-[var(--accent)]/50 transition-all">
       <input id="authPassword" type="password" required minlength="6" placeholder="Пароль" autocomplete="current-password"
-        class="w-full bg-white/5 rounded-xl px-4 py-3.5 mb-4 outline-none focus:ring-2 focus:ring-[#0A84FF]/40 focus:bg-white/[0.07] transition-all">
-      <p id="authError" class="hidden text-sm text-[#FF453A] mb-3"></p>
-      <button id="authSubmitBtn" type="submit" class="w-full bg-gradient-to-r from-[#0A84FF] to-[#0066CC] spring-tap rounded-2xl py-4 font-semibold text-[17px] shadow-lg shadow-[#0A84FF]/20">Войти</button>
-      <button type="button" onclick="toggleAuthMode()" class="w-full text-center text-sm text-[#8E8E93] mt-4">Нет аккаунта? Зарегистрироваться</button>
+        class="w-full bg-white/5 rounded-xl px-4 py-3.5 mb-4 outline-none focus:ring-2 focus:ring-[var(--accent)]/50 transition-all">
+      <p id="authError" class="hidden text-sm text-[#FF6B6B] mb-3"></p>
+      <button id="authSubmitBtn" type="submit" class="w-full grad-accent spring-tap rounded-2xl py-4 font-semibold text-[17px] shadow-lg shadow-[var(--accent)]/25">Войти</button>
+      <button type="button" onclick="toggleAuthMode()" class="w-full text-center text-sm text-[#9a9aa5] mt-4">Нет аккаунта? Зарегистрироваться</button>
     </form>
   </div>
 
-  <div id="app" class="max-w-md mx-auto min-h-screen flex-col relative z-10 hidden">
-    <header class="safe-top px-5 pt-3 pb-1 flex items-start justify-between gap-3">
+  <div id="app" class="max-w-md mx-auto min-h-[100dvh] flex-col relative z-10 hidden">
+    <header class="safe-top px-5 pt-3 pb-2 flex items-start justify-between gap-3">
       <div>
         <h1 class="t-title1">🐷 Копилка</h1>
-        <p class="text-sm text-[#8E8E93] -mt-0.5">Умный трекер расходов</p>
+        <button id="familyBadge" onclick="openFamilySheet()" class="flex items-center gap-1.5 mt-1 spring-tap">
+          <div id="familyAvatarsMini" class="flex -space-x-2"></div>
+          <span id="familyBadgeLabel" class="text-xs text-[#9a9aa5] font-medium">Личный бюджет</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9a9aa5" stroke-width="2.5" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+        </button>
       </div>
       <div class="flex gap-2 shrink-0">
-        <button id="settingsBtn" onclick="openSettingsSheet()" class="w-9 h-9 mt-1 rounded-full bg-white/5 flex items-center justify-center spring-tap">
+        <button id="settingsBtn" onclick="openSettingsSheet()" class="w-9 h-9 mt-1 rounded-full glass-pill flex items-center justify-center spring-tap">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
-        <button id="changelogBtn" onclick="openChangelog()" class="relative w-9 h-9 mt-1 rounded-full bg-white/5 flex items-center justify-center spring-tap">
+        <button id="changelogBtn" onclick="openChangelog()" class="relative w-9 h-9 mt-1 rounded-full glass-pill flex items-center justify-center spring-tap">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
-          <span id="changelogDot" class="hidden absolute top-1 right-1 w-2 h-2 rounded-full bg-[#FF453A]"></span>
+          <span id="changelogDot" class="hidden absolute top-1 right-1 w-2 h-2 rounded-full bg-[#FF6B6B]"></span>
         </button>
       </div>
     </header>
 
-    <main id="mainScroll" class="flex-1 px-5 pt-3 pb-32">
+    <main id="mainScroll" class="flex-1 px-5 pt-2 pb-32 overflow-y-auto">
 
       <!-- HOME TAB -->
       <section id="tabHome">
         <div id="pullIndicator" class="flex justify-center py-0 opacity-0 transition-opacity" style="margin-bottom:-4px;">
-          <svg id="pullSpinner" width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#8E8E93" stroke-width="2.2" stroke-opacity="0.25"/><path d="M21 12a9 9 0 0 0-9-9" stroke="#8E8E93" stroke-width="2.2" stroke-linecap="round"/></svg>
+          <svg id="pullSpinner" width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#9a9aa5" stroke-width="2.2" stroke-opacity="0.25"/><path d="M21 12a9 9 0 0 0-9-9" stroke="#9a9aa5" stroke-width="2.2" stroke-linecap="round"/></svg>
         </div>
 
-        <div class="rounded-3xl p-5 mb-4 relative overflow-hidden" style="background:linear-gradient(135deg,#1c1c1e,#232325)">
-          <div class="absolute -right-10 -top-14 w-44 h-44 rounded-full opacity-25 blur-2xl pointer-events-none" style="background:radial-gradient(circle,#FFD60A,transparent 70%)"></div>
-        <div class="relative float-slow">
-            <p class="text-[#8E8E93] text-sm font-medium mb-1">Текущий баланс</p>
+        <div class="rounded-3xl p-5 mb-4 relative overflow-hidden glass">
+          <div class="absolute -right-10 -top-14 w-44 h-44 rounded-full opacity-30 blur-2xl pointer-events-none" style="background:radial-gradient(circle,var(--accent),transparent 70%)"></div>
+          <div class="relative">
+            <div class="flex items-center justify-between mb-1">
+              <p class="text-[#9a9aa5] text-sm font-medium">Общий баланс</p>
+              <span id="syncIndicator" class="hidden items-center gap-1 text-[10px] font-semibold text-[var(--accent-2)]">
+                <span class="w-1.5 h-1.5 rounded-full bg-[var(--accent-2)]"></span> синхронизировано
+              </span>
+            </div>
             <p id="balanceAmount" class="text-[36px] font-bold tracking-tight mb-4 shimmer-text">0 ₽</p>
             <div class="flex gap-3">
               <div class="flex-1 bg-white/5 rounded-2xl px-3.5 py-3">
-                <p class="text-[11px] text-[#8E8E93] mb-0.5 flex items-center gap-1"><span class="text-[#30D158]">▲</span> Доходы</p>
+                <p class="text-[11px] text-[#9a9aa5] mb-0.5 flex items-center gap-1"><span class="text-[#30D9A0]">▲</span> Доходы</p>
                 <p id="incomeAmount" class="font-semibold">0 ₽</p>
               </div>
               <div class="flex-1 bg-white/5 rounded-2xl px-3.5 py-3">
-                <p class="text-[11px] text-[#8E8E93] mb-0.5 flex items-center gap-1"><span class="text-[#FF453A]">▼</span> Расходы</p>
+                <p class="text-[11px] text-[#9a9aa5] mb-0.5 flex items-center gap-1"><span class="text-[#FF6B6B]">▼</span> Расходы</p>
                 <p id="expenseAmount" class="font-semibold">0 ₽</p>
               </div>
             </div>
           </div>
         </div>
 
-        <div id="dailyLimitWidget" class="hidden rounded-2xl p-4 mb-4 fade-slide-up" style="background:linear-gradient(120deg,#10241a,#0d1c14)">
-          <p class="text-xs text-[#8E8E93] mb-1">Можно потратить сегодня</p>
-          <p id="dailyLimitAmount" class="text-2xl font-bold text-[#30D158]"></p>
+        <div id="dailyLimitWidget" class="hidden rounded-2xl p-4 mb-4 fade-slide-up glass" style="border-color: rgba(0,217,192,0.25)">
+          <p class="text-xs text-[#9a9aa5] mb-1">Можно потратить сегодня</p>
+          <p id="dailyLimitAmount" class="text-2xl font-bold text-[var(--accent-2)]"></p>
         </div>
 
-        <button onclick="openRecurringSheet()" class="w-full flex items-center justify-between bg-[#1c1c1e] rounded-2xl px-4 py-3.5 mb-4 spring-tap">
+        <button onclick="openRecurringSheet()" class="w-full flex items-center justify-between glass rounded-2xl px-4 py-3.5 mb-4 spring-tap">
           <span class="flex items-center gap-2.5 text-sm font-medium"><span class="text-lg">🔁</span> Регулярные платежи</span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9a9aa5" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
         </button>
 
-        <div id="budgetWidget" class="hidden bg-[#1c1c1e] rounded-2xl p-4 mb-4 fade-slide-up">
+        <div id="budgetWidget" class="hidden glass rounded-2xl p-4 mb-4 fade-slide-up">
           <div class="flex justify-between items-center mb-2">
-            <p class="text-sm font-medium text-[#8E8E93]">Бюджет на месяц</p>
+            <p class="text-sm font-medium text-[#9a9aa5]">Бюджет на месяц</p>
             <p id="budgetText" class="text-sm font-semibold"></p>
           </div>
           <div class="h-2.5 bg-white/10 rounded-full overflow-hidden">
@@ -194,33 +229,33 @@
           </div>
         </div>
 
-        <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide mb-2">Валюта отображения</p>
+        <p class="text-xs font-semibold text-[#9a9aa5] uppercase tracking-wide mb-2">Валюта отображения</p>
         <div id="currencySelector" class="grid grid-cols-4 gap-2 mb-4"></div>
 
-        <div class="bg-[#1c1c1e] rounded-2xl px-4 py-3 mb-5">
+        <div class="glass rounded-2xl px-4 py-3 mb-5">
           <div class="flex items-center justify-between gap-2">
-            <div id="ratesTicker" class="flex gap-3 overflow-x-auto text-xs text-[#8E8E93] flex-1"></div>
-            <button id="ratesRefreshBtn" onclick="fetchRates(true)" class="shrink-0 text-[#0A84FF] spring-tap p-1">
+            <div id="ratesTicker" class="flex gap-3 overflow-x-auto text-xs text-[#9a9aa5] flex-1"></div>
+            <button id="ratesRefreshBtn" onclick="fetchRates(true)" class="shrink-0 text-[var(--accent-2)] spring-tap p-1">
               <svg id="refreshIcon" width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.2" stroke-opacity="0.25"/><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
             </button>
           </div>
-          <p id="ratesUpdatedLabel" class="text-[10px] text-[#8E8E93] mt-1.5"></p>
+          <p id="ratesUpdatedLabel" class="text-[10px] text-[#9a9aa5] mt-1.5"></p>
         </div>
 
-        <button onclick="openAdviceSheet()" class="w-full relative overflow-hidden rounded-2xl p-4 mb-5 flex items-center gap-3 spring-tap" style="background:linear-gradient(120deg,#1c1c1e,#241c30)">
-          <div class="absolute -right-6 -top-8 w-28 h-28 rounded-full opacity-30 blur-2xl pointer-events-none animate-pulse" style="background:radial-gradient(circle,#BF5AF2,transparent 70%)"></div>
-          <div class="relative w-11 h-11 rounded-full bg-[#BF5AF2]/15 flex items-center justify-center text-xl shrink-0">🧠</div>
+        <button onclick="openAdviceSheet()" class="w-full relative overflow-hidden rounded-2xl p-4 mb-5 flex items-center gap-3 spring-tap glass">
+          <div class="absolute -right-6 -top-8 w-28 h-28 rounded-full opacity-30 blur-2xl pointer-events-none animate-pulse" style="background:radial-gradient(circle,var(--accent),transparent 70%)"></div>
+          <div class="relative w-11 h-11 rounded-full bg-[var(--accent)]/20 flex items-center justify-center text-xl shrink-0">🧠</div>
           <div class="relative flex-1 text-left">
             <p class="font-semibold text-[15px]">ИИ-советник по экономии</p>
-            <p class="text-xs text-[#8E8E93]">Разбор ваших трат и советы, где сэкономить</p>
+            <p class="text-xs text-[#9a9aa5]">Разбор ваших трат и советы, где сэкономить</p>
           </div>
-          <svg class="relative shrink-0" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+          <svg class="relative shrink-0" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9a9aa5" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
         </button>
 
         <h2 class="t-title3 mb-3">Последние операции</h2>
-        <p class="text-[11px] text-[#8E8E93] -mt-2 mb-3">Свайп влево — удалить</p>
+        <p class="text-[11px] text-[#9a9aa5] -mt-2 mb-3">Свайп влево — удалить</p>
         <div id="transactionsList" class="flex flex-col gap-2.5"></div>
-        <div id="transactionsEmpty" class="text-center py-14 text-[#8E8E93]">
+        <div id="transactionsEmpty" class="text-center py-14 text-[#9a9aa5]">
           <p class="text-4xl mb-2">🧾</p>
           <p class="font-medium text-white/80">Пока нет операций</p>
           <p class="text-sm mt-1">Нажмите «+», чтобы добавить первую</p>
@@ -229,24 +264,24 @@
 
       <!-- GOALS TAB -->
       <section id="tabGoals" class="hidden">
-        <div id="goalsSummaryCard" class="hidden flex items-center gap-4 bg-[#1c1c1e] rounded-2xl p-4 mb-5">
+        <div id="goalsSummaryCard" class="hidden flex items-center gap-4 glass rounded-2xl p-4 mb-5">
           <svg id="goalsRing" width="64" height="64" viewBox="0 0 64 64" class="shrink-0 -rotate-90">
             <circle cx="32" cy="32" r="27" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="7"/>
-            <circle id="goalsRingProgress" cx="32" cy="32" r="27" fill="none" stroke="#FFD60A" stroke-width="7" stroke-linecap="round" stroke-dasharray="169.6" stroke-dashoffset="169.6" style="transition: stroke-dashoffset .7s ease"/>
+            <circle id="goalsRingProgress" cx="32" cy="32" r="27" fill="none" stroke="var(--accent-2)" stroke-width="7" stroke-linecap="round" stroke-dasharray="169.6" stroke-dashoffset="169.6" style="transition: stroke-dashoffset .7s ease"/>
           </svg>
           <div class="min-w-0">
             <p id="goalsRingLabel" class="text-2xl font-bold">0%</p>
-            <p class="text-xs text-[#8E8E93]">Общий прогресс по целям</p>
-            <p id="goalsRingSub" class="text-xs text-[#8E8E93] mt-0.5"></p>
+            <p class="text-xs text-[#9a9aa5]">Общий прогресс по целям</p>
+            <p id="goalsRingSub" class="text-xs text-[#9a9aa5] mt-0.5"></p>
           </div>
         </div>
 
         <div class="flex items-center justify-between mb-4">
           <h2 class="t-title3">Ваши цели</h2>
-          <button onclick="openGoalSheet()" class="text-sm font-semibold text-[#FFD60A] bg-[#FFD60A]/10 px-3.5 py-1.5 rounded-full spring-tap">+ Добавить</button>
+          <button onclick="openGoalSheet()" class="text-sm font-semibold text-[var(--accent-2)] bg-[var(--accent-2)]/12 px-3.5 py-1.5 rounded-full spring-tap">+ Добавить</button>
         </div>
         <div id="goalsList" class="flex flex-col gap-3"></div>
-        <div id="goalsEmpty" class="text-center py-14 text-[#8E8E93]">
+        <div id="goalsEmpty" class="text-center py-14 text-[#9a9aa5]">
           <p class="text-4xl mb-2">🎯</p>
           <p class="font-medium text-white/80">Пока нет целей</p>
           <p class="text-sm mt-1">Создайте первую цель для накоплений</p>
@@ -256,27 +291,27 @@
       <!-- ANALYTICS TAB -->
       <section id="tabAnalytics" class="hidden">
         <h2 class="t-title3 mb-3">Доходы и расходы</h2>
-        <div class="bg-[#1c1c1e] rounded-2xl p-4 mb-6">
+        <div class="glass rounded-2xl p-4 mb-6">
           <div class="flex justify-between text-sm mb-2 gap-2">
-            <span id="ivsIncomeLabel" class="text-[#30D158] font-medium truncate">Доходы 0 ₽</span>
-            <span id="ivsExpenseLabel" class="text-[#FF453A] font-medium truncate">Расходы 0 ₽</span>
+            <span id="ivsIncomeLabel" class="text-[#30D9A0] font-medium truncate">Доходы 0 ₽</span>
+            <span id="ivsExpenseLabel" class="text-[#FF6B6B] font-medium truncate">Расходы 0 ₽</span>
           </div>
           <div class="h-3 rounded-full overflow-hidden flex bg-white/10">
-            <div id="ivsBarIncome" class="h-full bg-[#30D158] transition-all duration-700" style="width:0%"></div>
-            <div id="ivsBarExpense" class="h-full bg-[#FF453A] transition-all duration-700" style="width:0%"></div>
+            <div id="ivsBarIncome" class="h-full bg-[#30D9A0] transition-all duration-700" style="width:0%"></div>
+            <div id="ivsBarExpense" class="h-full bg-[#FF6B6B] transition-all duration-700" style="width:0%"></div>
           </div>
         </div>
 
         <h2 class="t-title3 mb-3">Расходы по категориям</h2>
         <div id="categoryDonut" class="relative w-40 h-40 mx-auto mb-6 fade-slide-up"></div>
         <div id="categoryBars"></div>
-        <div id="analyticsEmpty" class="text-center py-14 text-[#8E8E93]">
+        <div id="analyticsEmpty" class="text-center py-14 text-[#9a9aa5]">
           <p class="text-4xl mb-2">📊</p>
           <p class="font-medium text-white/80">Пока нет расходов</p>
           <p class="text-sm mt-1">Аналитика появится после первой операции</p>
         </div>
 
-        <button onclick="exportCSV()" class="w-full mt-6 flex items-center justify-center gap-2 bg-white/5 rounded-2xl py-3.5 font-medium text-sm spring-tap">
+        <button onclick="exportCSV()" class="w-full mt-6 flex items-center justify-center gap-2 glass rounded-2xl py-3.5 font-medium text-sm spring-tap">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Экспорт операций в CSV
         </button>
@@ -285,21 +320,21 @@
     </main>
 
     <!-- FAB -->
-    <button id="fabButton" class="fixed right-5 bottom-24 w-14 h-14 rounded-full bg-[#0A84FF] shadow-lg shadow-blue-500/30 flex items-center justify-center text-3xl font-light spring-tap z-30">＋</button>
+    <button id="fabButton" class="fixed right-5 bottom-24 w-14 h-14 rounded-full grad-accent shadow-lg shadow-[var(--accent)]/40 flex items-center justify-center text-3xl font-light spring-tap z-30">＋</button>
 
     <!-- BOTTOM NAV -->
     <nav class="fixed bottom-0 inset-x-0 z-20">
-      <div class="max-w-md mx-auto bg-[#1c1c1e]/85 backdrop-blur-xl border-t border-white/10 flex relative safe-bottom">
-        <div id="navIndicator" class="absolute top-1.5 left-0 h-[3px] w-1/3 rounded-full bg-[#0A84FF] transition-transform duration-300 sheet-spring" style="transform:translateX(0%)"></div>
-        <button class="nav-btn flex-1 flex flex-col items-center py-2.5 gap-1 text-[#0A84FF] active:opacity-60 transition-opacity" data-tab="home" onclick="switchTab('home')">
+      <div class="max-w-md mx-auto glass border-t border-white/10 flex relative safe-bottom" style="backdrop-filter:blur(28px)">
+        <div id="navIndicator" class="absolute top-1.5 left-0 h-[3px] w-1/3 rounded-full grad-accent transition-transform duration-300 sheet-spring" style="transform:translateX(0%)"></div>
+        <button class="nav-btn flex-1 flex flex-col items-center py-2.5 gap-1 text-[var(--accent-2)] active:opacity-60 transition-opacity" data-tab="home" onclick="switchTab('home')">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1H9a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1h2.5a1 1 0 0 0 1-1v-9"/></svg>
           <span class="text-[10px] font-medium">Главная</span>
         </button>
-        <button class="nav-btn flex-1 flex flex-col items-center py-2.5 gap-1 text-[#8E8E93] active:opacity-60 transition-opacity" data-tab="goals" onclick="switchTab('goals')">
+        <button class="nav-btn flex-1 flex flex-col items-center py-2.5 gap-1 text-[#9a9aa5] active:opacity-60 transition-opacity" data-tab="goals" onclick="switchTab('goals')">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.3"/><circle cx="12" cy="12" r="4.8"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>
           <span class="text-[10px] font-medium">Цели</span>
         </button>
-        <button class="nav-btn flex-1 flex flex-col items-center py-2.5 gap-1 text-[#8E8E93] active:opacity-60 transition-opacity" data-tab="analytics" onclick="switchTab('analytics')">
+        <button class="nav-btn flex-1 flex flex-col items-center py-2.5 gap-1 text-[#9a9aa5] active:opacity-60 transition-opacity" data-tab="analytics" onclick="switchTab('analytics')">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>
           <span class="text-[10px] font-medium">Аналитика</span>
         </button>
@@ -308,114 +343,141 @@
   </div>
 
   <!-- BACKDROP -->
-  <div id="backdrop" class="fixed inset-0 bg-black/60 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300 z-40"></div>
+  <div id="backdrop" class="fixed inset-0 bg-black/65 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300 z-40"></div>
 
   <!-- ADD TRANSACTION SHEET -->
   <div id="addSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 sheet-spring">
-    <div class="max-w-md mx-auto bg-[#1c1c1e] rounded-t-3xl safe-bottom max-h-[88vh] overflow-y-auto">
+    <div class="max-w-md mx-auto glass rounded-t-3xl safe-bottom max-h-[88vh] overflow-y-auto" style="background:var(--bg-1)">
       <div id="addHandle" class="pt-3 pb-1 flex justify-center touch-none"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
       <div class="px-5 pb-6 pt-2">
         <div class="flex items-center justify-between mb-5">
           <h2 class="t-title3">Новая операция</h2>
-          <button onclick="closeSheet('addSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#8E8E93] spring-tap">✕</button>
+          <button onclick="closeSheet('addSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#9a9aa5] spring-tap">✕</button>
         </div>
 
-        <button type="button" onclick="openCameraSheet()" class="w-full flex items-center justify-center gap-2 bg-white/5 active:bg-white/10 spring-tap rounded-2xl py-3.5 font-medium text-sm text-[#0A84FF] mb-1.5">
+        <button type="button" onclick="openCameraSheet()" class="w-full flex items-center justify-center gap-2 bg-white/5 active:bg-white/10 spring-tap rounded-2xl py-3.5 font-medium text-sm text-[var(--accent-2)] mb-1.5">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1-2h7l1 2h2A1.5 1.5 0 0 1 20 8.5v10A1.5 1.5 0 0 1 18.5 20h-13A1.5 1.5 0 0 1 4 18.5v-10Z"/><circle cx="12" cy="13" r="3.4"/></svg>
           Сканировать чек
         </button>
-        <p class="text-[11px] text-[#8E8E93] text-center mb-1">Камера или галерея, распознаётся прямо на телефоне. Бета — проверяйте сумму.</p>
+        <p class="text-[11px] text-[#9a9aa5] text-center mb-1">Камера или галерея, распознаётся прямо на телефоне. Бета — проверяйте сумму.</p>
         <input id="receiptInput" type="file" accept="image/*" capture="environment" class="hidden">
-        <div id="receiptStatus" class="hidden flex-col items-center gap-2 text-xs text-[#8E8E93] mb-2 mt-2">
+        <div id="receiptStatus" class="hidden flex-col items-center gap-2 text-xs text-[#9a9aa5] mb-2 mt-2">
           <div class="flex items-center gap-2">
             <svg class="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.2" stroke-opacity="0.25"/><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
             <span id="receiptStatusText">ИИ смотрит на чек…</span>
           </div>
         </div>
-        <div id="receiptConfirm" class="hidden bg-white/5 border border-[#0A84FF]/30 rounded-2xl p-4 mb-3">
-          <p class="text-xs text-[#8E8E93] mb-2">ИИ распознал:</p>
+        <div id="receiptConfirm" class="hidden bg-white/5 border border-[var(--accent-2)]/30 rounded-2xl p-4 mb-3">
+          <p class="text-xs text-[#9a9aa5] mb-2">ИИ распознал:</p>
           <p id="receiptConfirmText" class="text-sm mb-3 leading-relaxed"></p>
           <div class="flex gap-2 mb-2">
-            <button type="button" onclick="confirmReceipt(true)" class="flex-1 bg-[#30D158] text-black rounded-xl py-2.5 font-semibold text-sm spring-tap">Да, верно</button>
+            <button type="button" onclick="confirmReceipt(true)" class="flex-1 bg-[#30D9A0] text-black rounded-xl py-2.5 font-semibold text-sm spring-tap">Да, верно</button>
             <button type="button" onclick="confirmReceipt(false)" class="flex-1 bg-white/10 rounded-xl py-2.5 font-semibold text-sm spring-tap">Введу сам</button>
           </div>
-          <button type="button" onclick="addMoreReceiptPhoto()" class="w-full text-center text-xs text-[#0A84FF] py-1">📷 Чек не поместился — доснять ещё часть</button>
+          <button type="button" onclick="addMoreReceiptPhoto()" class="w-full text-center text-xs text-[var(--accent-2)] py-1">📷 Чек не поместился — доснять ещё часть</button>
         </div>
 
         <div class="relative flex bg-white/5 rounded-full p-1 mt-4 mb-6">
-          <div id="segSlider" class="absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full transition-transform duration-300 sheet-spring" style="background:#FF453A"></div>
+          <div id="segSlider" class="absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full transition-transform duration-300 sheet-spring" style="background:#FF6B6B"></div>
           <button type="button" id="segExpenseBtn" onclick="setType('expense')" class="relative z-10 flex-1 py-2.5 rounded-full font-semibold text-sm transition-colors text-white">Расход</button>
-          <button type="button" id="segIncomeBtn" onclick="setType('income')" class="relative z-10 flex-1 py-2.5 rounded-full font-semibold text-sm transition-colors text-[#8E8E93]">Доход</button>
+          <button type="button" id="segIncomeBtn" onclick="setType('income')" class="relative z-10 flex-1 py-2.5 rounded-full font-semibold text-sm transition-colors text-[#9a9aa5]">Доход</button>
         </div>
 
         <div class="flex items-center justify-center gap-2 mb-3">
           <input id="amountInput" type="text" inputmode="decimal" placeholder="0" class="bg-transparent text-5xl font-bold text-center outline-none placeholder-[#3A3A3C] w-48">
-          <span id="amountCurrencySymbol" class="text-3xl font-semibold text-[#8E8E93]">₽</span>
+          <span id="amountCurrencySymbol" class="text-3xl font-semibold text-[#9a9aa5]">₽</span>
         </div>
         <div id="entryCurrencyChips" class="flex gap-2 justify-center flex-wrap mb-6"></div>
 
-        <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide mb-2">Категория</p>
+        <p class="text-xs font-semibold text-[#9a9aa5] uppercase tracking-wide mb-2">Категория</p>
         <div id="categoryGrid" class="grid grid-cols-4 gap-2 mb-5"></div>
 
-        <input id="commentInput" type="text" maxlength="60" placeholder="Комментарий (необязательно)" class="w-full bg-white/5 rounded-xl px-4 py-3.5 text-[15px] outline-none mb-5 focus:ring-2 focus:ring-[#0A84FF]/40">
+        <input id="commentInput" type="text" maxlength="60" placeholder="Комментарий (необязательно)" class="w-full bg-white/5 rounded-xl px-4 py-3.5 text-[15px] outline-none mb-5 focus:ring-2 focus:ring-[var(--accent)]/40">
 
-        <button id="addSaveBtn" onclick="saveTransaction()" disabled class="w-full bg-[#0A84FF] disabled:opacity-40 disabled:pointer-events-none spring-tap rounded-2xl py-4 font-semibold text-[17px]">Добавить</button>
+        <button id="addSaveBtn" onclick="saveTransaction()" disabled class="w-full grad-accent disabled:opacity-40 disabled:pointer-events-none spring-tap rounded-2xl py-4 font-semibold text-[17px]">Добавить</button>
       </div>
     </div>
   </div>
 
   <!-- ADD GOAL SHEET -->
   <div id="goalSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 sheet-spring">
-    <div class="max-w-md mx-auto bg-[#1c1c1e] rounded-t-3xl safe-bottom">
+    <div class="max-w-md mx-auto glass rounded-t-3xl safe-bottom" style="background:var(--bg-1)">
       <div id="goalHandle" class="pt-3 pb-1 flex justify-center touch-none"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
       <div class="px-5 pb-6 pt-2">
         <div class="flex items-center justify-between mb-5">
           <h2 class="t-title3">Новая цель</h2>
-          <button onclick="closeSheet('goalSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#8E8E93] spring-tap">✕</button>
+          <button onclick="closeSheet('goalSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#9a9aa5] spring-tap">✕</button>
         </div>
-        <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide mb-2">Название</p>
-        <input id="goalNameInput" type="text" maxlength="40" placeholder="Например, Отпуск в Сочи" class="w-full bg-white/5 rounded-xl px-4 py-3.5 text-[15px] outline-none mb-5 focus:ring-2 focus:ring-[#FFD60A]/40">
-        <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide mb-2">Целевая сумма</p>
-        <div class="flex items-center gap-2 bg-white/5 rounded-xl px-4 py-3.5 mb-6 focus-within:ring-2 focus-within:ring-[#FFD60A]/40">
+        <p class="text-xs font-semibold text-[#9a9aa5] uppercase tracking-wide mb-2">Название</p>
+        <input id="goalNameInput" type="text" maxlength="40" placeholder="Например, Отпуск в Сочи" class="w-full bg-white/5 rounded-xl px-4 py-3.5 text-[15px] outline-none mb-5 focus:ring-2 focus:ring-[var(--accent-2)]/40">
+        <p class="text-xs font-semibold text-[#9a9aa5] uppercase tracking-wide mb-2">Целевая сумма</p>
+        <div class="flex items-center gap-2 bg-white/5 rounded-xl px-4 py-3.5 mb-6 focus-within:ring-2 focus-within:ring-[var(--accent-2)]/40">
           <input id="goalTargetInput" type="text" inputmode="decimal" placeholder="0" class="flex-1 bg-transparent text-[15px] outline-none">
-          <span id="goalCurrencySymbol" class="text-[#8E8E93] text-sm">₽</span>
+          <span id="goalCurrencySymbol" class="text-[#9a9aa5] text-sm">₽</span>
         </div>
-        <button onclick="saveGoal()" class="w-full bg-[#FFD60A] text-black spring-tap rounded-2xl py-4 font-semibold text-[17px]">Создать цель</button>
+        <button onclick="saveGoal()" class="w-full grad-teal text-black spring-tap rounded-2xl py-4 font-semibold text-[17px]">Создать цель</button>
       </div>
     </div>
   </div>
 
   <!-- TOP UP SHEET -->
   <div id="topUpSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 sheet-spring">
-    <div class="max-w-md mx-auto bg-[#1c1c1e] rounded-t-3xl safe-bottom">
+    <div class="max-w-md mx-auto glass rounded-t-3xl safe-bottom" style="background:var(--bg-1)">
       <div id="topUpHandle" class="pt-3 pb-1 flex justify-center touch-none"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
       <div class="px-5 pb-6 pt-2">
         <div class="flex items-center justify-between mb-1">
           <h2 class="t-title3">Пополнить цель</h2>
-          <button onclick="closeSheet('topUpSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#8E8E93] spring-tap">✕</button>
+          <button onclick="closeSheet('topUpSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#9a9aa5] spring-tap">✕</button>
         </div>
-        <p id="topUpGoalName" class="text-[#FFD60A] font-semibold mb-1"></p>
-        <p id="topUpBalanceLabel" class="text-xs text-[#8E8E93] mb-5"></p>
+        <p id="topUpGoalName" class="text-[var(--accent-2)] font-semibold mb-1"></p>
+        <p id="topUpBalanceLabel" class="text-xs text-[#9a9aa5] mb-5"></p>
         <div class="flex items-center justify-center gap-2 mb-6">
           <input id="topUpAmountInput" type="text" inputmode="decimal" placeholder="0" class="bg-transparent text-5xl font-bold text-center outline-none placeholder-[#3A3A3C] w-48">
-          <span id="topUpCurrencySymbol" class="text-3xl font-semibold text-[#8E8E93]">₽</span>
+          <span id="topUpCurrencySymbol" class="text-3xl font-semibold text-[#9a9aa5]">₽</span>
         </div>
-        <button onclick="saveTopUp()" class="w-full bg-[#FFD60A] text-black spring-tap rounded-2xl py-4 font-semibold text-[17px]">Пополнить</button>
+        <button onclick="saveTopUp()" class="w-full grad-teal text-black spring-tap rounded-2xl py-4 font-semibold text-[17px]">Пополнить</button>
       </div>
     </div>
   </div>
 
   <!-- CHANGELOG SHEET -->
   <div id="changelogSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 sheet-spring">
-    <div class="max-w-md mx-auto bg-[#1c1c1e] rounded-t-3xl safe-bottom max-h-[80vh] overflow-y-auto">
+    <div class="max-w-md mx-auto glass rounded-t-3xl safe-bottom max-h-[80vh] overflow-y-auto" style="background:var(--bg-1)">
       <div id="changelogHandle" class="pt-3 pb-1 flex justify-center touch-none"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
       <div class="px-5 pb-6 pt-2">
         <div class="flex items-center justify-between mb-5">
           <h2 class="t-title3">Что нового</h2>
-          <button onclick="closeSheet('changelogSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#8E8E93] spring-tap">✕</button>
+          <button onclick="closeSheet('changelogSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#9a9aa5] spring-tap">✕</button>
         </div>
         <div id="changelogList"></div>
         <button onclick="closeSheet('changelogSheet')" class="w-full bg-white/10 spring-tap rounded-2xl py-3.5 font-semibold text-[15px] mt-2">Понятно</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAMILY SHEET -->
+  <div id="familySheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 sheet-spring">
+    <div class="max-w-md mx-auto glass rounded-t-3xl safe-bottom max-h-[85vh] overflow-y-auto" style="background:var(--bg-1)">
+      <div id="familyHandle" class="pt-3 pb-1 flex justify-center touch-none"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
+      <div class="px-5 pb-6 pt-2">
+        <div class="flex items-center justify-between mb-1">
+          <h2 class="t-title3">👨‍👩‍👧 Семья</h2>
+          <button onclick="closeSheet('familySheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#9a9aa5] spring-tap">✕</button>
+        </div>
+        <p id="familySheetSub" class="text-xs text-[#9a9aa5] mb-4">Участники видят и добавляют операции в общий бюджет</p>
+
+        <div id="familyMembersFull" class="flex flex-col gap-2 mb-5"></div>
+
+        <p class="text-xs font-semibold text-[#9a9aa5] uppercase tracking-wide mb-2">Код приглашения — дайте его члену семьи</p>
+        <div class="bg-white/5 rounded-xl px-4 py-3.5 mb-3 flex items-center gap-2">
+          <p id="householdCodeFull" class="flex-1 font-mono text-lg tracking-widest">------</p>
+          <button onclick="copyInviteCode()" class="text-[var(--accent-2)] text-sm font-semibold shrink-0">Копировать</button>
+        </div>
+        <div class="flex gap-2 mb-2">
+          <input id="joinCodeInputFull" type="text" placeholder="Ввести код и присоединиться" class="flex-1 bg-white/5 rounded-xl px-4 py-3 outline-none text-sm uppercase">
+          <button onclick="joinHousehold('joinCodeInputFull')" class="bg-white/10 rounded-xl px-4 text-sm font-semibold spring-tap">Войти</button>
+        </div>
+        <p class="text-[11px] text-[#9a9aa5]">После входа по коду приложение перезагрузится, чтобы всё точно синхронизировалось.</p>
       </div>
     </div>
   </div>
@@ -442,104 +504,96 @@
 
   <!-- SETTINGS SHEET -->
   <div id="settingsSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 sheet-spring">
-    <div class="max-w-md mx-auto bg-[#1c1c1e] rounded-t-3xl safe-bottom">
+    <div class="max-w-md mx-auto glass rounded-t-3xl safe-bottom max-h-[88vh] overflow-y-auto" style="background:var(--bg-1)">
       <div id="settingsHandle" class="pt-3 pb-1 flex justify-center touch-none"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
       <div class="px-5 pb-6 pt-2">
         <div class="flex items-center justify-between mb-5">
           <h2 class="t-title3">Настройки</h2>
-          <button onclick="closeSheet('settingsSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#8E8E93] spring-tap">✕</button>
+          <button onclick="closeSheet('settingsSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#9a9aa5] spring-tap">✕</button>
         </div>
-        <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide mb-2">Зарплата в месяц</p>
-        <div class="flex items-center gap-2 bg-white/5 rounded-xl px-4 py-3.5 mb-2 focus-within:ring-2 focus-within:ring-[#0A84FF]/40">
+        <p class="text-xs font-semibold text-[#9a9aa5] uppercase tracking-wide mb-2">Зарплата в месяц</p>
+        <div class="flex items-center gap-2 bg-white/5 rounded-xl px-4 py-3.5 mb-2 focus-within:ring-2 focus-within:ring-[var(--accent)]/40">
           <input id="salaryInput" type="text" inputmode="decimal" placeholder="0" class="flex-1 bg-transparent text-[15px] outline-none">
-          <span id="salaryCurrencySymbol" class="text-[#8E8E93] text-sm">₽</span>
+          <span id="salaryCurrencySymbol" class="text-[#9a9aa5] text-sm">₽</span>
         </div>
-        <p class="text-[11px] text-[#8E8E93] mb-5">Используется для будущей аналитики бюджета</p>
+        <p class="text-[11px] text-[#9a9aa5] mb-5">Используется для будущей аналитики бюджета</p>
 
-        <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide mb-2">Бюджет на месяц (расходы)</p>
-        <div class="flex items-center gap-2 bg-white/5 rounded-xl px-4 py-3.5 mb-2 focus-within:ring-2 focus-within:ring-[#0A84FF]/40">
+        <p class="text-xs font-semibold text-[#9a9aa5] uppercase tracking-wide mb-2">Бюджет на месяц (расходы)</p>
+        <div class="flex items-center gap-2 bg-white/5 rounded-xl px-4 py-3.5 mb-2 focus-within:ring-2 focus-within:ring-[var(--accent)]/40">
           <input id="budgetInput" type="text" inputmode="decimal" placeholder="0 — без лимита" class="flex-1 bg-transparent text-[15px] outline-none">
-          <span id="budgetCurrencySymbol" class="text-[#8E8E93] text-sm">₽</span>
+          <span id="budgetCurrencySymbol" class="text-[#9a9aa5] text-sm">₽</span>
         </div>
-        <p class="text-[11px] text-[#8E8E93] mb-5">Покажем прогресс-бар на главном экране</p>
+        <p class="text-[11px] text-[#9a9aa5] mb-5">Покажем прогресс-бар на главном экране</p>
 
         <div class="flex items-center justify-between bg-white/5 rounded-xl px-4 py-3.5 mb-5">
           <div class="pr-3">
             <p class="text-sm font-medium">ИИ может уточнять</p>
-            <p class="text-[11px] text-[#8E8E93]">Если не уверен — задаст короткий вопрос вместо автозаполнения</p>
+            <p class="text-[11px] text-[#9a9aa5]">Если не уверен — задаст короткий вопрос вместо автозаполнения</p>
           </div>
-          <button id="clarifyToggle" onclick="toggleAiClarify()" class="shrink-0 w-12 h-7 rounded-full relative transition-colors" style="background:#30D158">
+          <button id="clarifyToggle" onclick="toggleAiClarify()" class="shrink-0 w-12 h-7 rounded-full relative transition-colors" style="background:#30D9A0">
             <span id="clarifyToggleDot" class="absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full transition-transform" style="transform:translateX(20px)"></span>
           </button>
         </div>
 
-        <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide mb-2">Семейный бюджет</p>
-        <div class="bg-white/5 rounded-xl px-4 py-3.5 mb-2">
-          <p class="text-[11px] text-[#8E8E93] mb-1">Код приглашения — дайте его члену семьи</p>
-          <div class="flex items-center gap-2">
-            <p id="householdCode" class="flex-1 font-mono text-lg tracking-widest">------</p>
-            <button onclick="copyInviteCode()" class="text-[#0A84FF] text-sm font-semibold">Копировать</button>
-          </div>
-        </div>
-        <div class="flex gap-2 mb-3">
-          <input id="joinCodeInput" type="text" placeholder="Ввести код и присоединиться" class="flex-1 bg-white/5 rounded-xl px-4 py-3 outline-none text-sm uppercase">
-          <button onclick="joinHousehold()" class="bg-white/10 rounded-xl px-4 text-sm font-semibold">Войти</button>
-        </div>
-        <div id="householdMembersList" class="mb-5"></div>
-        <button onclick="saveSalary()" class="w-full bg-[#0A84FF] spring-tap rounded-2xl py-4 font-semibold text-[17px] mb-3">Сохранить</button>
+        <button onclick="openFamilySheet()" class="w-full flex items-center justify-between bg-white/5 rounded-xl px-4 py-3.5 mb-5 spring-tap">
+          <span class="flex items-center gap-2.5 text-sm font-medium"><span class="text-lg">👨‍👩‍👧</span> Семейный доступ</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9a9aa5" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+        </button>
+
+        <button onclick="saveSalary()" class="w-full grad-accent spring-tap rounded-2xl py-4 font-semibold text-[17px] mb-3">Сохранить</button>
         <button onclick="openTutorial()" class="w-full bg-white/5 spring-tap rounded-2xl py-3.5 font-semibold text-[15px] mb-3">📖 Как это работает</button>
-        <button onclick="handleLogout()" class="w-full bg-white/5 text-[#FF453A] spring-tap rounded-2xl py-3.5 font-semibold text-[15px]">Выйти из аккаунта</button>
+        <button onclick="handleLogout()" class="w-full bg-white/5 text-[#FF6B6B] spring-tap rounded-2xl py-3.5 font-semibold text-[15px]">Выйти из аккаунта</button>
       </div>
     </div>
   </div>
 
   <!-- PREMIUM SHEET -->
   <div id="premiumSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 sheet-spring">
-    <div class="max-w-md mx-auto bg-gradient-to-b from-[#2a2410] to-[#1c1c1e] rounded-t-3xl safe-bottom">
+    <div class="max-w-md mx-auto rounded-t-3xl safe-bottom" style="background:linear-gradient(180deg,#26204a,var(--bg-1))">
       <div id="premiumHandle" class="pt-3 pb-1 flex justify-center touch-none"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
       <div class="px-5 pb-6 pt-2 text-center">
         <p class="text-5xl mb-2">👑</p>
         <h2 class="t-title3 mb-1">Копилка Premium</h2>
-        <p class="text-sm text-[#8E8E93] mb-5">Бесплатно доступно до 3 целей. С премиумом — без ограничений и с бонусами</p>
+        <p class="text-sm text-[#9a9aa5] mb-5">Бесплатно доступно до 3 целей. С премиумом — без ограничений и с бонусами</p>
         <div class="text-left bg-white/5 rounded-2xl p-4 mb-5 space-y-2.5">
-          <p class="text-sm flex items-center gap-2"><span class="text-[#FFD60A]">✓</span> Неограниченное число целей</p>
-          <p class="text-sm flex items-center gap-2"><span class="text-[#FFD60A]">✓</span> Безлимитное сканирование чеков ИИ</p>
-          <p class="text-sm flex items-center gap-2"><span class="text-[#FFD60A]">✓</span> Расширенная аналитика по месяцам</p>
-          <p class="text-sm flex items-center gap-2"><span class="text-[#FFD60A]">✓</span> Экспорт операций</p>
+          <p class="text-sm flex items-center gap-2"><span class="text-[var(--accent-2)]">✓</span> Неограниченное число целей</p>
+          <p class="text-sm flex items-center gap-2"><span class="text-[var(--accent-2)]">✓</span> Безлимитное сканирование чеков ИИ</p>
+          <p class="text-sm flex items-center gap-2"><span class="text-[var(--accent-2)]">✓</span> Расширенная аналитика по месяцам</p>
+          <p class="text-sm flex items-center gap-2"><span class="text-[var(--accent-2)]">✓</span> Экспорт операций</p>
         </div>
-        <button onclick="requestPremium()" class="w-full bg-[#FFD60A] text-black spring-tap rounded-2xl py-4 font-semibold text-[17px] mb-3">Оформить Premium</button>
-        <button onclick="closeSheet('premiumSheet')" class="w-full text-[#8E8E93] text-sm py-2">Не сейчас</button>
+        <button onclick="requestPremium()" class="w-full grad-teal text-black spring-tap rounded-2xl py-4 font-semibold text-[17px] mb-3">Оформить Premium</button>
+        <button onclick="closeSheet('premiumSheet')" class="w-full text-[#9a9aa5] text-sm py-2">Не сейчас</button>
       </div>
     </div>
   </div>
 
   <!-- TUTORIAL SHEET -->
   <div id="tutorialSheet" class="fixed inset-0 z-[110] hidden items-center justify-center px-6" style="background:rgba(0,0,0,0.85)">
-    <div class="w-full max-w-sm bg-[#1c1c1e] rounded-3xl p-6 text-center">
+    <div class="w-full max-w-sm glass rounded-3xl p-6 text-center" style="background:var(--bg-1)">
       <p id="tutStepEmoji" class="text-5xl mb-3">🐷</p>
       <h2 id="tutStepTitle" class="text-xl font-bold mb-2"></h2>
-      <p id="tutStepText" class="text-sm text-[#8E8E93] leading-relaxed mb-5"></p>
+      <p id="tutStepText" class="text-sm text-[#9a9aa5] leading-relaxed mb-5"></p>
       <div class="flex justify-center gap-1.5 mb-5">
-        <span id="tutDot0" class="w-1.5 h-1.5 rounded-full bg-[#0A84FF]"></span>
+        <span id="tutDot0" class="w-1.5 h-1.5 rounded-full bg-[var(--accent-2)]"></span>
         <span id="tutDot1" class="w-1.5 h-1.5 rounded-full bg-white/20"></span>
         <span id="tutDot2" class="w-1.5 h-1.5 rounded-full bg-white/20"></span>
         <span id="tutDot3" class="w-1.5 h-1.5 rounded-full bg-white/20"></span>
         <span id="tutDot4" class="w-1.5 h-1.5 rounded-full bg-white/20"></span>
       </div>
-      <button onclick="nextTutorialStep()" id="tutNextBtn" class="w-full bg-[#0A84FF] spring-tap rounded-2xl py-3.5 font-semibold text-[15px] mb-2">Дальше</button>
-      <button onclick="closeTutorial()" class="w-full text-[#8E8E93] text-sm py-1">Пропустить</button>
+      <button onclick="nextTutorialStep()" id="tutNextBtn" class="w-full grad-accent spring-tap rounded-2xl py-3.5 font-semibold text-[15px] mb-2">Дальше</button>
+      <button onclick="closeTutorial()" class="w-full text-[#9a9aa5] text-sm py-1">Пропустить</button>
     </div>
   </div>
 
-  <!-- CLARIFY SHEET (уточняющий вопрос от ИИ) -->
+  <!-- CLARIFY SHEET -->
   <div id="clarifySheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 sheet-spring">
-    <div class="max-w-md mx-auto bg-[#1c1c1e] rounded-t-3xl safe-bottom">
+    <div class="max-w-md mx-auto glass rounded-t-3xl safe-bottom" style="background:var(--bg-1)">
       <div id="clarifyHandle" class="pt-3 pb-1 flex justify-center touch-none"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
       <div class="px-5 pb-6 pt-3 text-center">
         <p class="text-3xl mb-2">🤔</p>
         <p id="clarifyQuestion" class="text-sm leading-relaxed mb-5"></p>
         <div class="flex gap-2">
-          <button onclick="clarifyAnswer(true)" class="flex-1 bg-[#30D158] text-black rounded-xl py-3 font-semibold text-sm spring-tap">Да, верно</button>
+          <button onclick="clarifyAnswer(true)" class="flex-1 bg-[#30D9A0] text-black rounded-xl py-3 font-semibold text-sm spring-tap">Да, верно</button>
           <button onclick="clarifyAnswer(false)" class="flex-1 bg-white/10 rounded-xl py-3 font-semibold text-sm spring-tap">Нет, я сам</button>
         </div>
       </div>
@@ -548,18 +602,18 @@
 
   <!-- RECURRING SHEET -->
   <div id="recurringSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 sheet-spring">
-    <div class="max-w-md mx-auto bg-[#1c1c1e] rounded-t-3xl safe-bottom max-h-[85vh] flex flex-col">
+    <div class="max-w-md mx-auto glass rounded-t-3xl safe-bottom max-h-[85vh] flex flex-col" style="background:var(--bg-1)">
       <div id="recurringHandle" class="pt-3 pb-1 flex justify-center touch-none shrink-0"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
       <div class="px-5 pb-6 pt-2 overflow-y-auto">
         <div class="flex items-center justify-between mb-5">
           <h2 class="t-title3">🔁 Регулярные платежи</h2>
-          <button onclick="closeSheet('recurringSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#8E8E93] spring-tap">✕</button>
+          <button onclick="closeSheet('recurringSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#9a9aa5] spring-tap">✕</button>
         </div>
         <div id="recurringList" class="mb-5"></div>
         <div class="border-t border-white/10 pt-4">
-          <p class="text-xs font-semibold text-[#8E8E93] uppercase tracking-wide mb-2">Новый платёж</p>
+          <p class="text-xs font-semibold text-[#9a9aa5] uppercase tracking-wide mb-2">Новый платёж</p>
           <div id="recType" data-type="expense" class="flex gap-2 mb-3">
-            <button id="recTypeExpenseBtn" type="button" onclick="setRecType('expense')" class="flex-1 bg-[#FF453A] rounded-xl py-2 text-sm font-semibold">Расход</button>
+            <button id="recTypeExpenseBtn" type="button" onclick="setRecType('expense')" class="flex-1 bg-[#FF6B6B] rounded-xl py-2 text-sm font-semibold">Расход</button>
             <button id="recTypeIncomeBtn" type="button" onclick="setRecType('income')" class="flex-1 bg-white/10 rounded-xl py-2 text-sm font-semibold">Доход</button>
           </div>
           <input id="recNameInput" type="text" placeholder="Название (например, Интернет)" class="w-full bg-white/5 rounded-xl px-4 py-3 mb-2 outline-none text-sm">
@@ -567,11 +621,11 @@
           <div class="flex gap-2 mb-2">
             <div class="flex-1 flex items-center gap-2 bg-white/5 rounded-xl px-4 py-3">
               <input id="recAmountInput" type="text" inputmode="decimal" placeholder="Сумма" class="flex-1 bg-transparent outline-none text-sm">
-              <span id="recCurrencySymbol" class="text-[#8E8E93] text-sm">₽</span>
+              <span id="recCurrencySymbol" class="text-[#9a9aa5] text-sm">₽</span>
             </div>
             <input id="recDayInput" type="number" min="1" max="28" placeholder="День" class="w-20 bg-white/5 rounded-xl px-3 py-3 outline-none text-sm">
           </div>
-          <button onclick="saveRecurring()" class="w-full bg-[#0A84FF] spring-tap rounded-2xl py-3.5 font-semibold text-[15px]">Добавить</button>
+          <button onclick="saveRecurring()" class="w-full grad-accent spring-tap rounded-2xl py-3.5 font-semibold text-[15px]">Добавить</button>
         </div>
       </div>
     </div>
@@ -579,19 +633,19 @@
 
   <!-- ADVICE SHEET -->
   <div id="adviceSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 sheet-spring">
-    <div class="max-w-md mx-auto bg-[#1c1c1e] rounded-t-3xl safe-bottom max-h-[80vh] flex flex-col">
+    <div class="max-w-md mx-auto glass rounded-t-3xl safe-bottom max-h-[80vh] flex flex-col" style="background:var(--bg-1)">
       <div id="adviceHandle" class="pt-3 pb-1 flex justify-center touch-none shrink-0"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
       <div class="px-5 pb-6 pt-2 overflow-y-auto">
         <div class="flex items-center justify-between mb-5">
           <h2 class="t-title3 flex items-center gap-2">🧠 Советы ИИ</h2>
-          <button onclick="closeSheet('adviceSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#8E8E93] spring-tap">✕</button>
+          <button onclick="closeSheet('adviceSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#9a9aa5] spring-tap">✕</button>
         </div>
-        <div id="adviceLoading" class="hidden flex-col items-center gap-3 py-10 text-sm text-[#8E8E93]">
+        <div id="adviceLoading" class="hidden flex-col items-center gap-3 py-10 text-sm text-[#9a9aa5]">
           <svg class="animate-spin" width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.2" stroke-opacity="0.25"/><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
           Анализирую ваши траты…
         </div>
         <div id="adviceContent" class="space-y-3"></div>
-        <button onclick="askAiAdvice()" class="w-full mt-5 bg-[#BF5AF2] spring-tap rounded-2xl py-3.5 font-semibold text-[15px]">Обновить совет</button>
+        <button onclick="askAiAdvice()" class="w-full mt-5 grad-accent spring-tap rounded-2xl py-3.5 font-semibold text-[15px]">Обновить совет</button>
       </div>
     </div>
   </div>
@@ -609,7 +663,6 @@
   };
   const FALLBACK_RATES = { USD: 1, EUR: 0.92, RUB: 83, BYN: 3.1 };
 
-  // ---------- Category config ----------
   const EXPENSE_CATEGORIES = [
     { name: 'Еда', icon: '🍔', color: '#FF9F0A' },
     { name: 'Транспорт', icon: '🚗', color: '#0A84FF' },
@@ -617,11 +670,11 @@
     { name: 'Развлечения', icon: '🎮', color: '#FF375F' },
     { name: 'Здоровье', icon: '💊', color: '#64D2FF' },
     { name: 'Покупки', icon: '🛍️', color: '#5E5CE6' },
-    { name: 'Связь', icon: '📱', color: '#30D158' },
+    { name: 'Связь', icon: '📱', color: '#30D9A0' },
     { name: 'Другое', icon: '📦', color: '#8E8E93' },
   ];
   const INCOME_CATEGORIES = [
-    { name: 'Зарплата', icon: '💼', color: '#30D158' },
+    { name: 'Зарплата', icon: '💼', color: '#30D9A0' },
     { name: 'Подарок', icon: '🎁', color: '#FF375F' },
     { name: 'Фриланс', icon: '💻', color: '#5E5CE6' },
     { name: 'Инвестиции', icon: '📈', color: '#64D2FF' },
@@ -629,39 +682,54 @@
   ];
   const SAVING_CATEGORY = { name: 'Накопления', icon: '🐷', color: '#FFD60A' };
   const ACHIEVEMENT_THRESHOLDS = [1000, 5000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000];
+  const MEMBER_COLORS = ['#6C5CE7', '#00D9C0', '#FF9F0A', '#FF375F', '#0A84FF', '#30D9A0'];
 
-  // ---------- Changelog ----------
   const CHANGELOG = [
+    { version: '4.0', date: '06.09.2026', items: [
+      'Новый интерфейс: единая цветовая тема, стеклянные карточки, больше анимаций',
+      'Бейдж семьи в шапке — сразу видно, кто в общем бюджете',
+      'Полноценный экран «Семья» со списком участников и кодом приглашения',
+      'Живая синхронизация: операции и цели других членов семьи появляются сами, без перезагрузки',
+      'После входа по коду семьи приложение аккуратно перезагружается, чтобы не было рассинхрона',
+      'Понятные сообщения об ошибках вместо сырого текста от сервера',
+    ]},
     { version: '3.0', date: '30.08.2026', items: [
-      'Сканер чеков теперь может сразу включать камеру (не только выбор фото из галереи)',
-      'Автоопределение валюты чека по магазину: Green → BYN, Магнит → RUB. Если магазин не распознан, текущая выбранная валюта (например, BYN) больше не сбрасывается на RUB',
-      'Курсы валют показывают динамику ▲/▼ по сравнению с прошлым обновлением',
-      'Потяните вниз на главном экране, чтобы обновить курсы (pull-to-refresh)',
-      'Свайп влево по операции — быстрое удаление',
-      'Общий прогресс по всем целям в виде кольца на вкладке «Цели»',
-      'Достижения за суммарные накопления в копилке',
+      'Сканер чеков поддерживает несколько фото для длинных чеков',
+      'Курсы валют показывают динамику ▲/▼',
+      'Pull-to-refresh, свайп для удаления операций',
+      'Общий прогресс по всем целям в виде кольца',
+      'Достижения за суммарные накопления',
     ]},
     { version: '2.0', date: '30.08.2026', items: [
       'Мультивалютность: RUB, USD, EUR, BYN с живыми курсами',
-      'Все суммы (баланс, операции, цели, аналитика) пересчитываются в выбранную валюту',
-      'Сканирование чеков камерой для быстрого добавления расхода — бета',
-      'Новые анимации: счётчик баланса, переходы между вкладками, поздравление при цели',
-      'Раздел «Что нового» с историей изменений',
+      'Сканирование чеков камерой — бета',
+      'Раздел «Что нового»',
     ]},
     { version: '1.0', date: '30.08.2026', items: [
-      'Учёт доходов и расходов с категориями и комментариями',
-      'Финансовые цели с прогресс-баром и пополнением с баланса',
+      'Учёт доходов и расходов с категориями',
+      'Финансовые цели с прогресс-баром',
       'Аналитика расходов по категориям',
-      'Хранение всех данных на устройстве (localStorage)',
     ]},
   ];
 
-  // ---------- Supabase ----------
   const SUPABASE_URL = 'https://xscuojyubgnilmufesvx.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzY3Vvanl1YmduaWxtdWZlc3Z4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgxMTExMTMsImV4cCI6MjEwMzY4NzExM30.th6U5ns_8BLmmngXcyk7azZDsSW9Nq4bTy6RDTVEU4k';
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   let currentUser = null;
   let isAuthSignup = false;
+
+  // Превращает сырые ошибки Supabase/Postgres (JSON с "code") в понятный русский текст,
+  // вместо показа {"code":"42P17",...} пользователю.
+  function friendlyDbError(err) {
+    if (!err) return 'Неизвестная ошибка';
+    const code = err.code || (err.details && err.details.code);
+    if (code === '42501') return 'База данных заблокировала это действие (нет прав доступа). Нужно проверить политику безопасности (RLS) в Supabase.';
+    if (code === '42P17') return 'Ошибка настройки базы данных (рекурсия в политике доступа). Сообщите разработчику — нужно поправить RLS-политику для profiles.';
+    if (code === '23505') return 'Такая запись уже существует.';
+    if (code === 'PGRST116') return 'Запись не найдена.';
+    if (err.message && !err.message.trim().startsWith('{')) return err.message;
+    return 'Не удалось выполнить действие. Попробуйте ещё раз.';
+  }
 
   function toggleAuthMode() {
     isAuthSignup = !isAuthSignup;
@@ -680,22 +748,23 @@
       ? await sb.auth.signUp({ email, password })
       : await sb.auth.signInWithPassword({ email, password });
     btn.disabled = false;
-    if (error) { errEl.textContent = error.message; errEl.classList.remove('hidden'); return false; }
-    if (isAuthSignup) { errEl.classList.remove('hidden'); errEl.classList.remove('text-[#FF453A]'); errEl.classList.add('text-[#30D158]'); errEl.textContent = 'Проверьте почту и подтвердите регистрацию, затем войдите'; toggleAuthMode(); }
+    if (error) { errEl.textContent = friendlyDbError(error); errEl.classList.remove('hidden'); return false; }
+    if (isAuthSignup) { errEl.classList.remove('hidden'); errEl.classList.remove('text-[#FF6B6B]'); errEl.classList.add('text-[#30D9A0]'); errEl.textContent = 'Проверьте почту и подтвердите регистрацию, затем войдите'; toggleAuthMode(); }
     return false;
   }
   async function handleGoogleLogin() {
     await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
   }
   async function handleLogout() {
+    teardownRealtime();
     await sb.auth.signOut();
     location.reload();
   }
 
-  let currentHousehold = null; // { id, name, invite_code, owner_id }
+  let currentHousehold = null;
+  let householdMembers = []; // [{id, email}]
+  let realtimeChannel = null;
 
-  // Генерация короткого человекочитаемого инвайт-кода на клиенте (используется только если
-  // в таблице households нет DEFAULT/триггера, генерирующего invite_code на стороне БД).
   function generateInviteCode() {
     const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
     let out = '';
@@ -721,10 +790,6 @@
       hhRow = data || null;
     }
     if (!hhRow) {
-      // household_id пуст ИЛИ указывает на несуществующую запись — создаём новую семью.
-      // ВАЖНО: вставка сюда требует RLS-политики на households, разрешающей
-      // INSERT для authenticated с проверкой owner_id = auth.uid() (см. fix_households_rls.sql).
-      // Без такой политики Supabase вернёт ошибку 42501 "row violates row-level security policy".
       const { data: newHh, error: hhErr } = await sb
         .from('households')
         .insert({ owner_id: userId, invite_code: generateInviteCode() })
@@ -732,36 +797,91 @@
         .single();
       if (!hhErr && newHh) {
         const { error: profErr } = await sb.from('profiles').update({ household_id: newHh.id }).eq('id', userId);
-        if (profErr) {
-          console.error('profile household_id update failed:', profErr);
-          showToast('Семья создана, но не удалось привязать профиль. Обновите страницу.', { error: true });
-        }
+        if (profErr) showToast('Семья создана, но профиль не обновился: ' + friendlyDbError(profErr), { error: true });
         realHhId = newHh.id;
         hhRow = newHh;
       } else {
-        console.error('household create failed:', hhErr);
-        // 42501 = RLS-политика Supabase блокирует вставку в households для этого пользователя.
-        // Это настройка на стороне базы данных (не баг в этом файле) — нужная политика описана
-        // в fix_households_rls.sql. Показываем понятное сообщение вместо сырого JSON.
-        const friendly = (hhErr && hhErr.code === '42501')
-          ? 'Не получилось создать семейный бюджет: база данных блокирует это действие (нет прав доступа). Нужно обновить политику безопасности в Supabase для таблицы households — см. инструкцию у разработчика.'
-          : 'Не удалось создать семейный бюджет. Попробуйте перезайти в приложение.';
-        showToast(friendly, { error: true });
-        transactions = []; goals = []; recurringPayments = []; currentHousehold = null;
+        showToast(friendlyDbError(hhErr) || 'Не удалось создать личный бюджет', { error: true });
+        transactions = []; goals = []; recurringPayments = []; currentHousehold = null; householdMembers = [];
         return;
       }
     }
 
-    const [txRes, goalsRes, recRes] = await Promise.all([
+    const [txRes, goalsRes, recRes, membersRes] = await Promise.all([
       sb.from('transactions').select('*').eq('household_id', realHhId).order('created_at', { ascending: false }),
       sb.from('goals').select('*').eq('household_id', realHhId).order('created_at', { ascending: true }),
       sb.from('recurring_payments').select('*').eq('household_id', realHhId).order('day_of_month', { ascending: true }),
+      sb.from('profiles').select('id, email, household_id').eq('household_id', realHhId),
     ]);
-    transactions = (txRes.data || []).map(t => ({ id: t.id, type: t.type, category: t.category, amount: Number(t.amount), entryAmount: Number(t.entry_amount), entryCurrency: t.entry_currency, comment: t.comment, isSaving: t.is_saving, date: new Date(t.created_at).getTime() }));
+    transactions = (txRes.data || []).map(t => ({ id: t.id, userId: t.user_id, type: t.type, category: t.category, amount: Number(t.amount), entryAmount: Number(t.entry_amount), entryCurrency: t.entry_currency, comment: t.comment, isSaving: t.is_saving, date: new Date(t.created_at).getTime() }));
     goals = (goalsRes.data || []).map(g => ({ id: g.id, name: g.name, target: Number(g.target), collected: Number(g.collected), date: new Date(g.created_at).getTime() }));
     currentHousehold = hhRow;
     recurringPayments = recRes.data || [];
+    householdMembers = (membersRes.data && membersRes.data.length) ? membersRes.data : [{ id: userId, email: currentUser.email }];
     await applyDueRecurringPayments();
+    setupRealtime(realHhId);
+  }
+
+  // ---------- Real-time family sync ----------
+  function setupRealtime(hhId) {
+    teardownRealtime();
+    if (!hhId) return;
+    realtimeChannel = sb.channel('household_' + hhId)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions', filter: `household_id=eq.${hhId}` }, handleRealtimeTx)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'goals', filter: `household_id=eq.${hhId}` }, handleRealtimeGoal)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `household_id=eq.${hhId}` }, handleRealtimeProfile)
+      .subscribe();
+  }
+  function teardownRealtime() {
+    if (realtimeChannel) { sb.removeChannel(realtimeChannel); realtimeChannel = null; }
+  }
+  function flashSync() {
+    const el = document.getElementById('syncIndicator');
+    if (!el) return;
+    el.classList.remove('hidden'); el.classList.add('flex');
+    clearTimeout(flashSync._t);
+    flashSync._t = setTimeout(() => { el.classList.add('hidden'); el.classList.remove('flex'); }, 1800);
+  }
+  function handleRealtimeTx(payload) {
+    // игнорируем собственные оптимистичные вставки — они уже в списке к моменту прихода события
+    if (payload.eventType === 'INSERT') {
+      const t = payload.new;
+      if (transactions.some(x => x.id === t.id)) { flashSync(); return; }
+      transactions.unshift({ id: t.id, userId: t.user_id, type: t.type, category: t.category, amount: Number(t.amount), entryAmount: Number(t.entry_amount), entryCurrency: t.entry_currency, comment: t.comment, isSaving: t.is_saving, date: new Date(t.created_at).getTime() });
+      if (t.user_id !== currentUser?.id) showToast('Новая операция от ' + memberLabel(t.user_id));
+    } else if (payload.eventType === 'DELETE') {
+      transactions = transactions.filter(x => x.id !== payload.old.id);
+    } else if (payload.eventType === 'UPDATE') {
+      const idx = transactions.findIndex(x => x.id === payload.new.id);
+      if (idx !== -1) transactions[idx] = { ...transactions[idx], amount: Number(payload.new.amount) };
+    }
+    renderAll();
+    flashSync();
+  }
+  function handleRealtimeGoal(payload) {
+    if (payload.eventType === 'INSERT') {
+      const g = payload.new;
+      if (!goals.some(x => x.id === g.id)) goals.push({ id: g.id, name: g.name, target: Number(g.target), collected: Number(g.collected), date: new Date(g.created_at).getTime() });
+    } else if (payload.eventType === 'UPDATE') {
+      const idx = goals.findIndex(x => x.id === payload.new.id);
+      if (idx !== -1) goals[idx] = { ...goals[idx], collected: Number(payload.new.collected), target: Number(payload.new.target) };
+    } else if (payload.eventType === 'DELETE') {
+      goals = goals.filter(x => x.id !== payload.old.id);
+    }
+    renderGoals();
+    flashSync();
+  }
+  function handleRealtimeProfile() {
+    if (currentHousehold) {
+      sb.from('profiles').select('id, email, household_id').eq('household_id', currentHousehold.id).then(({ data }) => {
+        if (data && data.length) { householdMembers = data; renderFamilyBadge(); }
+      });
+    }
+  }
+  function memberLabel(userId) {
+    if (userId === currentUser?.id) return 'вас';
+    const m = householdMembers.find(x => x.id === userId);
+    return m ? (m.email || 'участника').split('@')[0] : 'участника';
   }
 
   sb.auth.onAuthStateChange(async (event, session) => {
@@ -776,14 +896,48 @@
       switchTab('home');
       updateRatesUI();
       renderAll();
+      renderFamilyBadge();
       if (!localStorage.getItem('piggy_tutorial_seen')) openTutorial();
     } else {
       currentUser = null;
+      teardownRealtime();
       document.getElementById('authScreen').classList.remove('hidden');
       const app = document.getElementById('app');
       app.classList.add('hidden'); app.classList.remove('flex');
     }
   });
+
+  // ---------- Family UI ----------
+  function memberColor(id) {
+    const idx = householdMembers.findIndex(m => m.id === id);
+    return MEMBER_COLORS[(idx < 0 ? 0 : idx) % MEMBER_COLORS.length];
+  }
+  function renderFamilyBadge() {
+    const isFamily = householdMembers.length > 1;
+    document.getElementById('familyBadgeLabel').textContent = isFamily ? `Семья · ${householdMembers.length}` : 'Личный бюджет';
+    const mini = document.getElementById('familyAvatarsMini');
+    mini.innerHTML = householdMembers.slice(0, 4).map((m, i) => `
+      <div class="avatar-pop w-6 h-6 rounded-full border-2 flex items-center justify-center text-[10px] font-bold" style="animation-delay:${i*60}ms; background:${memberColor(m.id)}; border-color:var(--bg-0)">${(m.email || '?')[0].toUpperCase()}</div>
+    `).join('');
+  }
+  function openFamilySheet() {
+    document.getElementById('householdCodeFull').textContent = currentHousehold ? currentHousehold.invite_code : '------';
+    document.getElementById('familySheetSub').textContent = householdMembers.length > 1
+      ? `${householdMembers.length} участников делят этот бюджет`
+      : 'Пока только вы. Пригласите близких кодом ниже.';
+    document.getElementById('familyMembersFull').innerHTML = householdMembers.map((m, i) => {
+      const isMe = m.id === currentUser?.id;
+      const isOwner = currentHousehold && currentHousehold.owner_id === m.id;
+      return `<div class="flex items-center gap-3 bg-white/5 rounded-xl px-3.5 py-3 avatar-pop" style="animation-delay:${i*70}ms">
+        <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0" style="background:${memberColor(m.id)}">${(m.email || '?')[0].toUpperCase()}</div>
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-medium truncate">${escapeHtml(m.email || 'Участник')}${isMe ? ' <span class="text-[#9a9aa5] font-normal">(вы)</span>' : ''}</p>
+          <p class="text-[11px] text-[#9a9aa5]">${isOwner ? '👑 Создатель семьи' : 'Участник'}</p>
+        </div>
+      </div>`;
+    }).join('');
+    openSheet('familySheet');
+  }
 
   // ---------- Settings (salary) ----------
   let userSalary = 0;
@@ -802,7 +956,7 @@
       if (now.getDate() < rp.day_of_month) continue;
       const amountRUB = convert(Number(rp.amount), rp.currency, 'RUB');
       const { data } = await sb.from('transactions').insert({ user_id: currentUser.id, household_id: currentHousehold.id, type: rp.type, category: rp.category, amount: amountRUB, entry_amount: rp.amount, entry_currency: rp.currency, comment: `Регулярный платёж: ${rp.name}` }).select().single();
-      if (data) transactions.unshift({ id: data.id, type: data.type, category: data.category, amount: Number(data.amount), entryAmount: Number(data.entry_amount), entryCurrency: data.entry_currency, comment: data.comment, isSaving: false, date: new Date(data.created_at).getTime() });
+      if (data) transactions.unshift({ id: data.id, userId: data.user_id, type: data.type, category: data.category, amount: Number(data.amount), entryAmount: Number(data.entry_amount), entryCurrency: data.entry_currency, comment: data.comment, isSaving: false, date: new Date(data.created_at).getTime() });
       await sb.from('recurring_payments').update({ last_applied_month: monthKey }).eq('id', rp.id);
       rp.last_applied_month = monthKey;
     }
@@ -815,16 +969,16 @@
   }
   function renderRecurringList() {
     const el = document.getElementById('recurringList');
-    if (!recurringPayments.length) { el.innerHTML = `<p class="text-sm text-[#8E8E93] text-center py-4">Пока нет регулярных платежей</p>`; return; }
+    if (!recurringPayments.length) { el.innerHTML = `<p class="text-sm text-[#9a9aa5] text-center py-4">Пока нет регулярных платежей</p>`; return; }
     el.innerHTML = recurringPayments.map(rp => `
       <div class="flex items-center justify-between bg-white/5 rounded-xl px-3.5 py-3 mb-2">
         <div>
           <p class="text-sm font-medium">${escapeHtml(rp.name)}</p>
-          <p class="text-xs text-[#8E8E93]">${rp.day_of_month}-го числа · ${escapeHtml(rp.category)}</p>
+          <p class="text-xs text-[#9a9aa5]">${rp.day_of_month}-го числа · ${escapeHtml(rp.category)}</p>
         </div>
         <div class="flex items-center gap-2">
-          <span class="text-sm font-semibold ${rp.type === 'income' ? 'text-[#30D158]' : 'text-[#FF453A]'}">${rp.type === 'income' ? '+' : '-'}${fmRaw(Number(rp.amount), rp.currency)}</span>
-          <button onclick="deleteRecurring('${rp.id}')" class="text-[#8E8E93] spring-tap">✕</button>
+          <span class="text-sm font-semibold ${rp.type === 'income' ? 'text-[#30D9A0]' : 'text-[#FF6B6B]'}">${rp.type === 'income' ? '+' : '-'}${fmRaw(Number(rp.amount), rp.currency)}</span>
+          <button onclick="deleteRecurring('${rp.id}')" class="text-[#9a9aa5] spring-tap">✕</button>
         </div>
       </div>`).join('');
   }
@@ -837,7 +991,7 @@
     const cats = type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
     const category = document.getElementById('recCategorySelect').value || cats[0].name;
     const { data, error } = await sb.from('recurring_payments').insert({ user_id: currentUser.id, household_id: currentHousehold.id, name, type, category, amount, currency: displayCurrency, day_of_month: day }).select().single();
-    if (error) { showToast('Не удалось сохранить: ' + error.message, { error: true }); return; }
+    if (error) { showToast(friendlyDbError(error), { error: true }); return; }
     recurringPayments.push(data);
     document.getElementById('recNameInput').value = '';
     document.getElementById('recAmountInput').value = '';
@@ -852,8 +1006,8 @@
   }
   function setRecType(type) {
     document.getElementById('recType').dataset.type = type;
-    document.getElementById('recTypeIncomeBtn').classList.toggle('bg-[#30D158]', type === 'income');
-    document.getElementById('recTypeExpenseBtn').classList.toggle('bg-[#FF453A]', type === 'expense');
+    document.getElementById('recTypeIncomeBtn').classList.toggle('bg-[#30D9A0]', type === 'income');
+    document.getElementById('recTypeExpenseBtn').classList.toggle('bg-[#FF6B6B]', type === 'expense');
     document.getElementById('recTypeIncomeBtn').classList.toggle('bg-white/10', type !== 'income');
     document.getElementById('recTypeExpenseBtn').classList.toggle('bg-white/10', type !== 'expense');
     const cats = type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
@@ -874,35 +1028,11 @@
     document.getElementById('salaryInput').value = userSalary ? String(convert(userSalary, 'RUB', displayCurrency).toFixed(2)).replace('.00','') : '';
     document.getElementById('budgetCurrencySymbol').textContent = CURRENCIES[displayCurrency].symbol;
     document.getElementById('budgetInput').value = userMonthlyBudget ? String(convert(userMonthlyBudget, 'RUB', displayCurrency).toFixed(2)).replace('.00','') : '';
-    document.getElementById('householdCode').textContent = currentHousehold ? currentHousehold.invite_code : '------';
     setClarifyToggleUI();
-    loadHouseholdMembers();
     openSheet('settingsSheet');
   }
-  async function loadHouseholdMembers() {
-    const el = document.getElementById('householdMembersList');
-    if (!currentHousehold) { el.innerHTML = ''; return; }
-    el.innerHTML = `<p class="text-[11px] text-[#8E8E93]">Загружаю участников…</p>`;
-    try {
-      const { data: sessionData } = await sb.auth.getSession();
-      const token = sessionData?.session?.access_token;
-      const resp = await fetch('/api/household-members', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accessToken: token, householdId: currentHousehold.id }),
-      });
-      const data = await resp.json();
-      if (!resp.ok) { el.innerHTML = ''; return; }
-      el.innerHTML = `<p class="text-[11px] text-[#8E8E93] mb-1.5">Участники (${data.members.length})</p>` +
-        data.members.map(m => `
-          <div class="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-2 mb-1.5">
-            <div class="w-7 h-7 rounded-full bg-[#0A84FF]/20 flex items-center justify-center text-xs font-semibold shrink-0">${escapeHtml(m.email[0]?.toUpperCase() || '?')}</div>
-            <p class="text-xs flex-1 truncate">${escapeHtml(m.email)}${m.isMe ? ' <span class=\"text-[#8E8E93]\">(вы)</span>' : ''}</p>
-          </div>`).join('');
-    } catch (e) { el.innerHTML = ''; }
-  }
   function setClarifyToggleUI() {
-    document.getElementById('clarifyToggle').style.background = userAiClarifyEnabled ? '#30D158' : '#3A3A3C';
+    document.getElementById('clarifyToggle').style.background = userAiClarifyEnabled ? '#30D9A0' : '#3A3A3C';
     document.getElementById('clarifyToggleDot').style.transform = userAiClarifyEnabled ? 'translateX(20px)' : 'translateX(0)';
   }
   async function toggleAiClarify() {
@@ -915,14 +1045,20 @@
     navigator.clipboard?.writeText(currentHousehold.invite_code);
     showToast('Код скопирован — отправьте его члену семьи');
   }
-  async function joinHousehold() {
-    const code = document.getElementById('joinCodeInput').value.trim().toLowerCase();
+  // ВАЖНО: после присоединения к семье делаем полную перезагрузку страницы,
+  // а не просто перерисовку — иначе household_id в памяти браузера может
+  // разойтись с тем, что реально в базе, и следующая операция будет отклонена
+  // RLS-политикой ("new row violates row-level security policy").
+  async function joinHousehold(inputId) {
+    const input = document.getElementById(inputId || 'joinCodeInputFull');
+    const code = input.value.trim().toLowerCase();
     if (!code) return;
     const { data: hh, error } = await sb.from('households').select('*').eq('invite_code', code).single();
     if (error || !hh) { showToast('Код не найден', { error: true }); return; }
-    await sb.from('profiles').update({ household_id: hh.id }).eq('id', currentUser.id);
+    const { error: updErr } = await sb.from('profiles').update({ household_id: hh.id }).eq('id', currentUser.id);
+    if (updErr) { showToast(friendlyDbError(updErr), { error: true }); return; }
     showToast('Вы присоединились к семье! Перезагружаю…');
-    setTimeout(() => location.reload(), 1000);
+    setTimeout(() => location.reload(), 800);
   }
   async function saveSalary() {
     const entered = parseFloat(document.getElementById('salaryInput').value) || 0;
@@ -930,7 +1066,8 @@
     userSalaryCurrency = displayCurrency;
     const enteredBudget = parseFloat(document.getElementById('budgetInput').value) || 0;
     userMonthlyBudget = convert(enteredBudget, displayCurrency, 'RUB');
-    await sb.from('profiles').update({ salary: userSalary, salary_currency: userSalaryCurrency, monthly_budget: userMonthlyBudget }).eq('id', currentUser.id);
+    const { error } = await sb.from('profiles').update({ salary: userSalary, salary_currency: userSalaryCurrency, monthly_budget: userMonthlyBudget }).eq('id', currentUser.id);
+    if (error) { showToast(friendlyDbError(error), { error: true }); return; }
     closeSheet('settingsSheet');
     renderBudgetWidget();
     showToast('Настройки сохранены');
@@ -944,10 +1081,10 @@
     const pct = Math.min(100, Math.round((spentThisMonth / userMonthlyBudget) * 100));
     const over = spentThisMonth > userMonthlyBudget;
     document.getElementById('budgetText').textContent = `${fmDisplay(spentThisMonth)} / ${fmDisplay(userMonthlyBudget)}`;
-    document.getElementById('budgetText').className = over ? 'text-sm font-semibold text-[#FF453A]' : 'text-sm font-semibold';
+    document.getElementById('budgetText').className = over ? 'text-sm font-semibold text-[#FF6B6B]' : 'text-sm font-semibold';
     const bar = document.getElementById('budgetBar');
     bar.style.width = pct + '%';
-    bar.style.background = over ? '#FF453A' : (pct > 80 ? '#FF9F0A' : '#30D158');
+    bar.style.background = over ? '#FF6B6B' : (pct > 80 ? '#FF9F0A' : '#30D9A0');
     renderDailyLimit(spentThisMonth, now);
   }
   function renderDailyLimit(spentThisMonth, now) {
@@ -960,7 +1097,7 @@
     const perDay = daysLeft > 0 ? remaining / daysLeft : remaining;
     const amountEl = document.getElementById('dailyLimitAmount');
     amountEl.textContent = fmDisplay(perDay);
-    amountEl.className = 'text-2xl font-bold ' + (perDay > 0 ? 'text-[#30D158]' : 'text-[#FF453A]');
+    amountEl.className = 'text-2xl font-bold ' + (perDay > 0 ? 'text-[#30D9A0]' : 'text-[#FF6B6B]');
   }
 
   // ---------- State ----------
@@ -982,21 +1119,11 @@
   let ratesUpdatedAt = null;
   let rateTrend = {};
 
-  // FIX (currency switch bug): a monotonically increasing token guards the balance's rAF animation
-  // loop so that two overlapping animate calls (e.g. a fast double-tap on a currency chip, or a
-  // currency switch firing while a transaction-driven re-render is still animating) can no longer
-  // interleave writes to the same DOM node. The previous implementation had no such guard, which is
-  // what made the displayed currency appear to "change on its own" after tapping a currency chip.
   let balanceAnimToken = 0;
   let currencySwitchLock = false;
 
   const TAB_IDS = { home: 'tabHome', goals: 'tabGoals', analytics: 'tabAnalytics' };
 
-  // ---------- Persistence ----------
-  function persist() { /* запись идёт напрямую в Supabase в местах мутаций ниже */ }
-
-  // ---------- Helpers ----------
-  function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
   function escapeHtml(str) { const d = document.createElement('div'); d.textContent = str ?? ''; return d.innerHTML; }
   function prefersReducedMotion() { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
 
@@ -1045,13 +1172,11 @@
     if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
     e.target.value = v;
   }
-  // FIX: animateValue now takes a token and bails out if a newer animation has superseded it,
-  // instead of blindly writing to the DOM regardless of which call started last.
   function animateValue(el, from, to, duration, formatFn, token) {
     if (prefersReducedMotion() || !el) { if (el) el.textContent = formatFn(to); return; }
     const start = performance.now();
     function step(now) {
-      if (token !== undefined && token !== balanceAnimToken) return; // a newer render took over
+      if (token !== undefined && token !== balanceAnimToken) return;
       const p = Math.min(1, (now - start) / duration);
       const eased = 1 - Math.pow(1 - p, 3);
       el.textContent = formatFn(from + (to - from) * eased);
@@ -1060,7 +1185,6 @@
     requestAnimationFrame(step);
   }
 
-  // ---------- Exchange rates ----------
   function rateValueRub(ratesObj, cur) {
     const usd = 1 / (ratesObj[cur] || 1);
     return usd * (ratesObj['RUB'] || 1);
@@ -1112,28 +1236,24 @@
       ticker.innerHTML = ['USD', 'EUR', 'BYN'].map(cur => {
         const v = convert(1, cur, 'RUB');
         const t = rateTrend[cur];
-        const arrow = t === 'up' ? '<span class="text-[#30D158]">▲</span>' : t === 'down' ? '<span class="text-[#FF453A]">▼</span>' : '';
+        const arrow = t === 'up' ? '<span class="text-[#30D9A0]">▲</span>' : t === 'down' ? '<span class="text-[#FF6B6B]">▼</span>' : '';
         return `<span class="shrink-0 inline-flex items-center gap-1">${CURRENCIES[cur].symbol}1≈${v.toLocaleString('ru-RU', { maximumFractionDigits: 1 })}₽ ${arrow}</span>`;
       }).join('<span class="text-white/15">·</span>');
     }
     if (label) label.textContent = ratesUpdatedAt ? ('Обновлено ' + timeAgo(ratesUpdatedAt)) : 'Офлайн-курс (примерный)';
   }
 
-  // ---------- Rendering ----------
-  function renderAll() { renderBalance(); renderTransactions(); renderGoals(); renderAnalytics(); renderBudgetWidget(); }
+  function renderAll() { renderBalance(); renderTransactions(); renderGoals(); renderAnalytics(); renderBudgetWidget(); renderFamilyBadge(); }
 
   function renderCurrencySelector() {
     document.getElementById('currencySelector').innerHTML = Object.keys(CURRENCIES).map(cur => {
       const active = cur === displayCurrency;
-      return `<button data-cur="${cur}" onclick="setDisplayCurrency('${cur}')" class="cur-chip flex flex-col items-center justify-center gap-0.5 py-2.5 rounded-2xl transition-colors ${active ? 'bg-[#0A84FF] text-white' : 'bg-white/5 text-[#8E8E93]'}">
+      return `<button data-cur="${cur}" onclick="setDisplayCurrency('${cur}')" class="cur-chip flex flex-col items-center justify-center gap-0.5 py-2.5 rounded-2xl transition-colors ${active ? 'grad-accent text-white' : 'bg-white/5 text-[#9a9aa5]'}">
         <span class="text-base font-bold">${CURRENCIES[cur].symbol}</span>
         <span class="text-[10px] font-medium">${cur}</span>
       </button>`;
     }).join('');
   }
-  // FIX: guarded with currencySwitchLock so a fast double-tap can't fire two overlapping
-  // conversions/renders/Supabase writes at once, which was the second half of the "currency
-  // changes on its own" bug.
   async function setDisplayCurrency(cur) {
     if (cur === displayCurrency || currencySwitchLock) return;
     currencySwitchLock = true;
@@ -1165,23 +1285,25 @@
     const sorted = [...transactions].sort((a, b) => b.date - a.date);
     if (sorted.length === 0) { list.innerHTML = ''; empty.classList.remove('hidden'); return; }
     empty.classList.add('hidden');
+    const isFamily = householdMembers.length > 1;
     list.innerHTML = sorted.map((t, i) => {
       const cat = getCategoryInfo(t);
       const sign = t.type === 'income' ? '+' : '−';
-      const colorClass = t.type === 'income' ? 'text-[#30D158]' : 'text-[#FF453A]';
-      const deleteBtn = t.isSaving ? '' : `<button onclick="deleteTransaction('${t.id}')" class="text-[#8E8E93] active:scale-90 active:text-[#FF453A] transition-transform p-2 -mr-1.5 shrink-0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V7m2 0-.8 12.2A2 2 0 0 1 14.2 21H9.8a2 2 0 0 1-2-1.8L7 7"/></svg></button>`;
+      const colorClass = t.type === 'income' ? 'text-[#30D9A0]' : 'text-[#FF6B6B]';
+      const deleteBtn = t.isSaving ? '' : `<button onclick="deleteTransaction('${t.id}')" class="text-[#9a9aa5] active:scale-90 active:text-[#FF6B6B] transition-transform p-2 -mr-1.5 shrink-0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V7m2 0-.8 12.2A2 2 0 0 1 14.2 21H9.8a2 2 0 0 1-2-1.8L7 7"/></svg></button>`;
       const originalLine = (t.entryCurrency && t.entryCurrency !== displayCurrency)
-        ? `<p class="text-[10px] text-[#8E8E93]/80 truncate">введено: ${fmRaw(t.entryAmount, t.entryCurrency)}</p>` : '';
+        ? `<p class="text-[10px] text-[#9a9aa5]/80 truncate">введено: ${fmRaw(t.entryAmount, t.entryCurrency)}</p>` : '';
+      const authorBadge = (isFamily && t.userId) ? `<span class="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full mr-1" style="background:${memberColor(t.userId)}33; color:${memberColor(t.userId)}">${escapeHtml(memberLabel(t.userId))}</span>` : '';
       const swipeAttr = t.isSaving ? '' : `data-id="${t.id}"`;
       return `<div class="relative rounded-2xl overflow-hidden card-enter" style="animation-delay:${Math.min(i,8)*30}ms">
-        <div class="absolute inset-0 bg-[#FF453A] flex items-center justify-end pr-6">
+        <div class="absolute inset-0 bg-[#FF6B6B] flex items-center justify-end pr-6">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V7m2 0-.8 12.2A2 2 0 0 1 14.2 21H9.8a2 2 0 0 1-2-1.8L7 7"/></svg>
         </div>
-        <div class="txn-fg relative flex items-center gap-3 bg-[#1c1c1e] rounded-2xl p-3.5" ${swipeAttr} style="transition:transform .25s ease">
+        <div class="txn-fg relative flex items-center gap-3 glass rounded-2xl p-3.5" ${swipeAttr} style="transition:transform .25s ease">
           <div class="w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0 shadow-lg" style="background:linear-gradient(135deg,${cat.color}33,${cat.color}11);box-shadow:0 4px 14px ${cat.color}22">${cat.icon}</div>
           <div class="flex-1 min-w-0">
             <p class="font-medium truncate">${escapeHtml(cat.name)}</p>
-            <p class="text-xs text-[#8E8E93] truncate">${t.comment ? escapeHtml(t.comment) + ' · ' : ''}${formatDate(t.date)}</p>
+            <p class="text-xs text-[#9a9aa5] truncate">${authorBadge}${t.comment ? escapeHtml(t.comment) + ' · ' : ''}${formatDate(t.date)}</p>
           </div>
           <div class="text-right shrink-0">
             <p class="${colorClass} font-semibold">${sign}${fmDisplay(t.amount)}</p>
@@ -1222,29 +1344,29 @@
       const pct = g.target > 0 ? Math.min(100, Math.round((g.collected / g.target) * 100)) : 0;
       const done = g.collected >= g.target;
       const celebrate = g.id === justCompletedGoalId;
-      return `<div id="goal-${g.id}" class="bg-[#1c1c1e] rounded-2xl p-4 card-enter ${celebrate ? 'goal-celebrate' : ''}" style="animation-delay:${i*40}ms">
+      return `<div id="goal-${g.id}" class="glass rounded-2xl p-4 card-enter ${celebrate ? 'goal-celebrate' : ''}" style="animation-delay:${i*40}ms">
         <div class="flex justify-between items-start mb-2 gap-2">
           <div class="flex items-center gap-3 min-w-0">
             <div class="relative w-11 h-11 shrink-0">
               <svg width="44" height="44" viewBox="0 0 44 44" class="-rotate-90">
-                <circle cx="22" cy="22" r="18" fill="none" stroke="#2c2c2e" stroke-width="4"/>
-                <circle cx="22" cy="22" r="18" fill="none" stroke="${done ? '#30D158' : '#FFD60A'}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${2*Math.PI*18}" stroke-dashoffset="${2*Math.PI*18*(1-pct/100)}" style="transition:stroke-dashoffset .6s ease"/>
+                <circle cx="22" cy="22" r="18" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="4"/>
+                <circle cx="22" cy="22" r="18" fill="none" stroke="${done ? '#30D9A0' : '#FFD60A'}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${2*Math.PI*18}" stroke-dashoffset="${2*Math.PI*18*(1-pct/100)}" style="transition:stroke-dashoffset .6s ease"/>
               </svg>
               <span class="absolute inset-0 flex items-center justify-center text-sm">${done ? '🎉' : '🎯'}</span>
             </div>
             <div class="min-w-0">
               <p class="font-semibold text-[17px] truncate">${escapeHtml(g.name)}</p>
-              <p class="text-xs text-[#8E8E93] mt-0.5">${fmDisplay(g.collected)} из ${fmDisplay(g.target)}</p>
+              <p class="text-xs text-[#9a9aa5] mt-0.5">${fmDisplay(g.collected)} из ${fmDisplay(g.target)}</p>
             </div>
           </div>
-          <span class="text-xs font-semibold px-2 py-1 rounded-full shrink-0 ${done ? 'bg-[#30D158]/15 text-[#30D158]' : 'bg-[#FFD60A]/15 text-[#FFD60A]'}">${done ? 'Готово 🎉' : pct + '%'}</span>
+          <span class="text-xs font-semibold px-2 py-1 rounded-full shrink-0 ${done ? 'bg-[#30D9A0]/15 text-[#30D9A0]' : 'bg-[#FFD60A]/15 text-[#FFD60A]'}">${done ? 'Готово 🎉' : pct + '%'}</span>
         </div>
         <div class="h-2.5 bg-white/10 rounded-full overflow-hidden mb-3">
           <div class="h-full rounded-full transition-all duration-500" style="width:${pct}%; background:linear-gradient(90deg,#FFD60A,#FF9F0A)"></div>
         </div>
         <div class="flex gap-2">
           <button onclick="openTopUpSheet('${g.id}')" class="flex-1 bg-white/10 active:bg-white/20 spring-tap rounded-xl py-2.5 font-medium text-sm">Пополнить</button>
-          <button onclick="deleteGoal('${g.id}')" class="px-3 text-[#FF453A]/80 spring-tap text-sm">Удалить</button>
+          <button onclick="deleteGoal('${g.id}')" class="px-3 text-[#FF6B6B]/80 spring-tap text-sm">Удалить</button>
         </div>
       </div>`;
     }).join('');
@@ -1285,7 +1407,7 @@
       }).join('');
       donutEl.innerHTML = `<svg width="160" height="160" viewBox="0 0 160 160">${segs}</svg>
         <div class="absolute inset-0 flex flex-col items-center justify-center">
-          <span class="text-[11px] text-[#8E8E93]">Расходы</span>
+          <span class="text-[11px] text-[#9a9aa5]">Расходы</span>
           <span class="text-[15px] font-bold">${fmDisplay(expense)}</span>
         </div>`;
     }
@@ -1295,7 +1417,7 @@
       return `<div class="mb-3.5 card-enter" style="animation-delay:${i*40}ms">
         <div class="flex justify-between items-center mb-1.5 gap-2">
           <span class="flex items-center gap-2 text-sm font-medium truncate"><span>${info.icon}</span>${escapeHtml(name)}</span>
-          <span class="text-sm text-[#8E8E93] shrink-0">${fmDisplay(amount)} · ${pct}%</span>
+          <span class="text-sm text-[#9a9aa5] shrink-0">${fmDisplay(amount)} · ${pct}%</span>
         </div>
         <div class="h-2 bg-white/10 rounded-full overflow-hidden">
           <div class="h-full rounded-full transition-all duration-700" style="width:${pct}%; background:${info.color}"></div>
@@ -1306,12 +1428,13 @@
 
   function exportCSV() {
     if (!transactions.length) { showToast('Нет операций для экспорта', { error: true }); return; }
-    const header = 'Дата,Тип,Категория,Сумма (RUB),Комментарий\n';
+    const header = 'Дата,Автор,Тип,Категория,Сумма (RUB),Комментарий\n';
     const rows = transactions.map(t => {
       const d = new Date(t.date).toLocaleDateString('ru-RU');
       const type = t.type === 'income' ? 'Доход' : 'Расход';
+      const author = memberLabel(t.userId);
       const comment = (t.comment || '').replace(/"/g, '""');
-      return `${d},${type},"${t.category}",${t.amount},"${comment}"`;
+      return `${d},"${author}",${type},"${t.category}",${t.amount},"${comment}"`;
     }).join('\n');
     const blob = new Blob(['\uFEFF' + header + rows], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -1325,9 +1448,9 @@
   // ---------- Tutorial ----------
   const TUTORIAL_STEPS = [
     { emoji: '🐷', title: 'Добро пожаловать в Копилку', text: 'Быстрый обзор возможностей — займёт 30 секунд.' },
-    { emoji: '📷', title: 'ИИ сканирует чеки', text: 'Сфотографируйте чек — сумма, магазин и категория заполнятся сами. Если чек длинный — можно доснять ещё фото.' },
-    { emoji: '🧠', title: 'Советник по экономии', text: 'На главном экране есть карточка с ИИ-советами — основаны на ваших реальных тратах за месяц.' },
-    { emoji: '👨‍👩‍👧', title: 'Семейный бюджет', text: 'В настройках (⚙️) — код приглашения. Дайте его близким, и все операции будут общими.' },
+    { emoji: '📷', title: 'ИИ сканирует чеки', text: 'Сфотографируйте чек — сумма, магазин и категория заполнятся сами.' },
+    { emoji: '🧠', title: 'Советник по экономии', text: 'На главном экране есть карточка с ИИ-советами по вашим тратам.' },
+    { emoji: '👨‍👩‍👧', title: 'Семейный бюджет', text: 'Нажмите на бейдж вверху экрана — там код приглашения. Все операции семьи синхронизируются в реальном времени.' },
     { emoji: '🎯', title: 'Цели и лимиты', text: 'Ставьте цели накоплений, задайте месячный бюджет — увидите, сколько можно тратить сегодня.' },
   ];
   let tutorialStepIdx = 0;
@@ -1337,7 +1460,7 @@
     document.getElementById('tutStepTitle').textContent = s.title;
     document.getElementById('tutStepText').textContent = s.text;
     document.getElementById('tutNextBtn').textContent = tutorialStepIdx === TUTORIAL_STEPS.length - 1 ? 'Начать!' : 'Дальше';
-    for (let i = 0; i < 5; i++) document.getElementById('tutDot' + i).classList.toggle('bg-[#0A84FF]', i === tutorialStepIdx);
+    for (let i = 0; i < 5; i++) document.getElementById('tutDot' + i).classList.toggle('bg-[var(--accent-2)]', i === tutorialStepIdx);
     for (let i = 0; i < 5; i++) document.getElementById('tutDot' + i).classList.toggle('bg-white/20', i !== tutorialStepIdx);
   }
   function openTutorial() {
@@ -1390,14 +1513,14 @@
       loading.classList.add('hidden'); loading.classList.remove('flex');
       if (!resp.ok || data.error) throw new Error(data.error || 'Ошибка');
       const tips = Array.isArray(data.tips) ? data.tips : [];
-      if (!tips.length) { content.innerHTML = `<p class="text-sm text-[#8E8E93] text-center py-6">Добавьте немного операций, чтобы ИИ мог дать совет</p>`; return; }
+      if (!tips.length) { content.innerHTML = `<p class="text-sm text-[#9a9aa5] text-center py-6">Добавьте немного операций, чтобы ИИ мог дать совет</p>`; return; }
       content.innerHTML = tips.map((tip, i) => `
         <div class="bg-white/5 rounded-2xl p-4 fade-slide-up" style="animation-delay:${i*90}ms">
           <p class="text-sm leading-relaxed">${escapeHtml(tip)}</p>
         </div>`).join('');
     } catch (err) {
       loading.classList.add('hidden'); loading.classList.remove('flex');
-      content.innerHTML = `<p class="text-sm text-[#FF453A] text-center py-6">Не удалось получить совет: ${escapeHtml(err.message)}</p>`;
+      content.innerHTML = `<p class="text-sm text-[#FF6B6B] text-center py-6">Не удалось получить совет: ${escapeHtml(err.message)}</p>`;
     }
   }
 
@@ -1406,7 +1529,7 @@
       <div class="mb-5">
         <div class="flex items-baseline gap-2 mb-2">
           <span class="font-bold text-[15px]">v${v.version}</span>
-          <span class="text-xs text-[#8E8E93]">${v.date}</span>
+          <span class="text-xs text-[#9a9aa5]">${v.date}</span>
         </div>
         <ul class="space-y-1.5">
           ${v.items.map(it => `<li class="text-sm text-white/80 flex gap-2"><span class="text-[#FFD60A] shrink-0">•</span><span>${escapeHtml(it)}</span></li>`).join('')}
@@ -1414,7 +1537,6 @@
       </div>`).join('');
   }
 
-  // ---------- Tabs ----------
   function switchTab(tab) {
     currentTab = tab;
     Object.entries(TAB_IDS).forEach(([key, id]) => {
@@ -1426,8 +1548,8 @@
     });
     document.querySelectorAll('.nav-btn').forEach(btn => {
       const active = btn.dataset.tab === tab;
-      btn.classList.toggle('text-[#0A84FF]', active);
-      btn.classList.toggle('text-[#8E8E93]', !active);
+      btn.classList.toggle('text-[var(--accent-2)]', active);
+      btn.classList.toggle('text-[#9a9aa5]', !active);
     });
     const tabIndex = { home: 0, goals: 1, analytics: 2 }[tab] || 0;
     document.getElementById('navIndicator').style.transform = `translateX(${tabIndex * 100}%)`;
@@ -1436,7 +1558,6 @@
     if (tab === 'home') { renderBalance(); renderTransactions(); }
   }
 
-  // ---------- Sheets ----------
   function openSheet(id) {
     currentSheetId = id;
     const backdrop = document.getElementById('backdrop');
@@ -1473,7 +1594,6 @@
     });
   }
 
-  // ---------- Swipe to delete ----------
   function initSwipeDelete() {
     const list = document.getElementById('transactionsList');
     let activeEl = null, id = null, startX = 0, dx = 0, dragging = false;
@@ -1504,18 +1624,17 @@
     });
   }
 
-  // ---------- Pull to refresh ----------
   function initPullToRefresh() {
     const main = document.getElementById('mainScroll');
     const indicator = document.getElementById('pullIndicator');
     let startY = 0, pulling = false, dy = 0;
     main.addEventListener('touchstart', e => {
-      if (window.scrollY <= 0 && currentTab === 'home') { startY = e.touches[0].clientY; pulling = true; dy = 0; }
+      if (main.scrollTop <= 0 && currentTab === 'home') { startY = e.touches[0].clientY; pulling = true; dy = 0; }
     }, { passive: true });
     main.addEventListener('touchmove', e => {
       if (!pulling) return;
       dy = e.touches[0].clientY - startY;
-      if (dy > 0 && window.scrollY <= 0) {
+      if (dy > 0 && main.scrollTop <= 0) {
         indicator.style.opacity = Math.min(1, dy / 70);
         indicator.style.transform = `rotate(${Math.min(dy * 3, 360)}deg)`;
       }
@@ -1528,20 +1647,19 @@
     });
   }
 
-  // ---------- Add Transaction ----------
   function setType(type) {
     selectedType = type;
     const slider = document.getElementById('segSlider');
     const expenseBtn = document.getElementById('segExpenseBtn');
     const incomeBtn = document.getElementById('segIncomeBtn');
     if (type === 'expense') {
-      slider.style.transform = 'translateX(0%)'; slider.style.background = '#FF453A';
-      expenseBtn.classList.add('text-white'); expenseBtn.classList.remove('text-[#8E8E93]');
-      incomeBtn.classList.add('text-[#8E8E93]'); incomeBtn.classList.remove('text-white');
+      slider.style.transform = 'translateX(0%)'; slider.style.background = '#FF6B6B';
+      expenseBtn.classList.add('text-white'); expenseBtn.classList.remove('text-[#9a9aa5]');
+      incomeBtn.classList.add('text-[#9a9aa5]'); incomeBtn.classList.remove('text-white');
     } else {
-      slider.style.transform = 'translateX(100%)'; slider.style.background = '#30D158';
-      incomeBtn.classList.add('text-white'); incomeBtn.classList.remove('text-[#8E8E93]');
-      expenseBtn.classList.add('text-[#8E8E93]'); expenseBtn.classList.remove('text-white');
+      slider.style.transform = 'translateX(100%)'; slider.style.background = '#30D9A0';
+      incomeBtn.classList.add('text-white'); incomeBtn.classList.remove('text-[#9a9aa5]');
+      expenseBtn.classList.add('text-[#9a9aa5]'); expenseBtn.classList.remove('text-white');
     }
     renderCategoryGrid();
   }
@@ -1550,7 +1668,7 @@
     document.getElementById('categoryGrid').innerHTML = cats.map((c, i) =>
       `<button type="button" data-cat="${c.name}" onclick="selectCategory('${c.name}')" class="cat-chip fade-slide-up flex flex-col items-center gap-1.5 py-3 rounded-2xl bg-white/5 active:scale-90 transition-all duration-150 border-2 border-transparent" style="animation-delay:${i*35}ms">
         <span class="cat-chip-icon w-9 h-9 rounded-full flex items-center justify-center text-lg transition-transform duration-200" style="background:${c.color}22">${c.icon}</span>
-        <span class="text-[10.5px] font-medium text-[#8E8E93] leading-tight text-center">${c.name}</span>
+        <span class="text-[10.5px] font-medium text-[#9a9aa5] leading-tight text-center">${c.name}</span>
       </button>`).join('');
     selectedCategory = null;
     updateSaveButtonState();
@@ -1558,7 +1676,7 @@
   function selectCategory(name) {
     selectedCategory = name;
     const cats = selectedType === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
-    const accent = selectedType === 'expense' ? '#FF453A' : '#30D158';
+    const accent = selectedType === 'expense' ? '#FF6B6B' : '#30D9A0';
     document.querySelectorAll('.cat-chip').forEach(el => {
       const icon = el.querySelector('.cat-chip-icon');
       const cat = cats.find(c => c.name === el.dataset.cat);
@@ -1579,7 +1697,7 @@
   function renderEntryCurrencyChips() {
     document.getElementById('entryCurrencyChips').innerHTML = Object.keys(CURRENCIES).map(cur => {
       const active = cur === selectedEntryCurrency;
-      return `<button type="button" data-cur="${cur}" onclick="selectEntryCurrency('${cur}')" class="entry-cur-chip shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${active ? 'bg-white text-black' : 'bg-white/5 text-[#8E8E93]'}">${cur}</button>`;
+      return `<button type="button" data-cur="${cur}" onclick="selectEntryCurrency('${cur}')" class="entry-cur-chip shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${active ? 'bg-white text-black' : 'bg-white/5 text-[#9a9aa5]'}">${cur}</button>`;
     }).join('');
   }
   function selectEntryCurrency(cur) {
@@ -1608,8 +1726,8 @@
     const amountRUB = convert(entered, selectedEntryCurrency, 'RUB');
     const row = { user_id: currentUser.id, household_id: currentHousehold.id, type: selectedType, category: selectedCategory, amount: amountRUB, entry_amount: entered, entry_currency: selectedEntryCurrency, comment };
     const { data, error } = await sb.from('transactions').insert(row).select().single();
-    if (error) { showToast('Не удалось сохранить: ' + error.message, { error: true }); return; }
-    transactions.unshift({ id: data.id, type: data.type, category: data.category, amount: Number(data.amount), entryAmount: Number(data.entry_amount), entryCurrency: data.entry_currency, comment: data.comment, isSaving: data.is_saving, date: new Date(data.created_at).getTime() });
+    if (error) { showToast(friendlyDbError(error), { error: true }); return; }
+    transactions.unshift({ id: data.id, userId: data.user_id, type: data.type, category: data.category, amount: Number(data.amount), entryAmount: Number(data.entry_amount), entryCurrency: data.entry_currency, comment: data.comment, isSaving: data.is_saving, date: new Date(data.created_at).getTime() });
     closeSheet('addSheet');
     renderAll();
     showToast((selectedType === 'income' ? 'Доход' : 'Расход') + ' добавлен');
@@ -1620,7 +1738,7 @@
     const [removed] = transactions.splice(idx, 1);
     renderAll();
     const { error } = await sb.from('transactions').delete().eq('id', id);
-    if (error) { transactions.splice(idx, 0, removed); renderAll(); showToast('Не удалось удалить: ' + error.message, { error: true }); return; }
+    if (error) { transactions.splice(idx, 0, removed); renderAll(); showToast(friendlyDbError(error), { error: true }); return; }
     showToast('Операция удалена', { actionLabel: 'Отменить', onAction: async () => {
       const row = { user_id: currentUser.id, household_id: currentHousehold.id, type: removed.type, category: removed.category, amount: removed.amount, entry_amount: removed.entryAmount, entry_currency: removed.entryCurrency, comment: removed.comment, is_saving: removed.isSaving };
       const { data } = await sb.from('transactions').insert(row).select().single();
@@ -1628,7 +1746,6 @@
     } });
   }
 
-  // ---------- Camera ----------
   function openCameraSheet() {
     const sheet = document.getElementById('cameraSheet');
     sheet.classList.remove('hidden'); sheet.classList.add('flex');
@@ -1673,7 +1790,6 @@
     canvas.toBlob(blob => { if (blob) processReceiptImage(blob); }, 'image/jpeg', 0.92);
   }
 
-  // ---------- Receipt AI scan ----------
   let pendingReceiptParsed = null;
   function fileToBase64(file) {
     return new Promise((resolve, reject) => {
@@ -1771,7 +1887,6 @@
     selectCategory(cat);
     updateSaveButtonState();
   }
-  // ---------- Уточняющий вопрос (опрос), только если разрешено в настройках ----------
   function openClarifySheet(parsed) {
     const field = parsed.unclear_field;
     const q = field === 'amount'
@@ -1822,7 +1937,6 @@
     e.target.value = '';
   }
 
-  // ---------- Goals ----------
   const FREE_GOALS_LIMIT = 3;
   function openGoalSheet() {
     if (!userIsPremium && goals.length >= FREE_GOALS_LIMIT) { openPremiumSheet(); return; }
@@ -1837,7 +1951,7 @@
     if (!name || !(enteredTarget > 0)) { showToast('Заполните название и сумму', { error: true }); return; }
     const target = convert(enteredTarget, displayCurrency, 'RUB');
     const { data, error } = await sb.from('goals').insert({ user_id: currentUser.id, household_id: currentHousehold.id, name, target, collected: 0 }).select().single();
-    if (error) { showToast('Не удалось создать цель: ' + error.message, { error: true }); return; }
+    if (error) { showToast(friendlyDbError(error), { error: true }); return; }
     goals.push({ id: data.id, name: data.name, target: Number(data.target), collected: Number(data.collected), date: new Date(data.created_at).getTime() });
     closeSheet('goalSheet');
     renderGoals();
@@ -1846,7 +1960,7 @@
   async function deleteGoal(id) {
     if (!confirm('Удалить цель? Уже накопленные средства не вернутся на баланс.')) return;
     const { error } = await sb.from('goals').delete().eq('id', id);
-    if (error) { showToast('Не удалось удалить: ' + error.message, { error: true }); return; }
+    if (error) { showToast(friendlyDbError(error), { error: true }); return; }
     goals = goals.filter(g => g.id !== id);
     renderGoals();
     showToast('Цель удалена');
@@ -1870,6 +1984,7 @@
       const th = Math.max(...newly);
       localStorage.setItem('piggy_achievements', JSON.stringify([...unlocked, ...newly]));
       setTimeout(() => showToast(`🏅 Достижение: накоплено ${fmDisplay(th)}!`), 900);
+      if (typeof confetti === 'function') confetti({ particleCount: 70, spread: 65, origin: { y: 0.6 } });
     }
   }
   async function saveTopUp() {
@@ -1886,18 +2001,17 @@
       sb.from('goals').update({ collected: newCollected }).eq('id', g.id),
       sb.from('transactions').insert({ user_id: currentUser.id, household_id: currentHousehold.id, type: 'expense', category: SAVING_CATEGORY.name, is_saving: true, amount: amountRUB, entry_amount: entered, entry_currency: displayCurrency, comment: `Пополнение цели «${g.name}»` }).select().single(),
     ]);
-    if (goalRes.error || txRes.error) { showToast('Не удалось пополнить цель', { error: true }); return; }
+    if (goalRes.error || txRes.error) { showToast(friendlyDbError(goalRes.error || txRes.error), { error: true }); return; }
     g.collected = newCollected;
-    transactions.unshift({ id: txRes.data.id, type: 'expense', category: SAVING_CATEGORY.name, isSaving: true, amount: amountRUB, entryAmount: entered, entryCurrency: displayCurrency, comment: `Пополнение цели «${g.name}»`, date: new Date(txRes.data.created_at).getTime() });
+    transactions.unshift({ id: txRes.data.id, userId: txRes.data.user_id, type: 'expense', category: SAVING_CATEGORY.name, isSaving: true, amount: amountRUB, entryAmount: entered, entryCurrency: displayCurrency, comment: `Пополнение цели «${g.name}»`, date: new Date(txRes.data.created_at).getTime() });
     closeSheet('topUpSheet');
     const newlyDone = !wasDone && g.collected >= g.target;
-    if (newlyDone) justCompletedGoalId = g.id;
+    if (newlyDone) { justCompletedGoalId = g.id; if (typeof confetti === 'function') confetti({ particleCount: 120, spread: 90, origin: { y: 0.6 } }); }
     renderAll();
     showToast(newlyDone ? `🎉 Цель «${g.name}» достигнута!` : `Цель «${g.name}» пополнена на ${fmRaw(entered, displayCurrency)}`);
     checkAchievements();
   }
 
-  // ---------- Changelog ----------
   function openChangelog() {
     renderChangelog();
     openSheet('changelogSheet');
@@ -1905,13 +2019,12 @@
     document.getElementById('changelogDot').classList.add('hidden');
   }
 
-  // ---------- Toast ----------
   function showToast(message, opts = {}) {
     const container = document.getElementById('toastContainer');
     const el = document.createElement('div');
-    el.className = 'pointer-events-auto max-w-full bg-[#2c2c2e]/95 backdrop-blur-xl text-white text-sm font-medium px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 toast-in border border-white/10';
-    el.innerHTML = `<span class="flex-1">${escapeHtml(message)}</span>` + (opts.actionLabel ? `<button class="text-[#0A84FF] font-semibold shrink-0">${escapeHtml(opts.actionLabel)}</button>` : '');
-    if (opts.error) el.style.borderColor = 'rgba(255,69,58,0.4)';
+    el.className = 'pointer-events-auto max-w-full glass text-white text-sm font-medium px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 toast-in';
+    el.innerHTML = `<span class="flex-1">${escapeHtml(message)}</span>` + (opts.actionLabel ? `<button class="text-[var(--accent-2)] font-semibold shrink-0">${escapeHtml(opts.actionLabel)}</button>` : '');
+    if (opts.error) el.style.borderColor = 'rgba(255,107,107,0.4)';
     container.appendChild(el);
     let done = false;
     const remove = () => { if (done) return; done = true; el.classList.add('toast-out'); setTimeout(() => el.remove(), 220); };
@@ -1919,7 +2032,6 @@
     setTimeout(remove, opts.actionLabel ? 5000 : 2600);
   }
 
-  // ---------- Init ----------
   function init() {
     ['amountInput', 'goalTargetInput', 'topUpAmountInput'].forEach(id => document.getElementById(id).addEventListener('input', sanitizeAmountInput));
     document.getElementById('amountInput').addEventListener('input', updateSaveButtonState);
@@ -1935,17 +2047,17 @@
     enableDrag('adviceSheet', 'adviceHandle');
     enableDrag('recurringSheet', 'recurringHandle');
     enableDrag('clarifySheet', 'clarifyHandle');
+    enableDrag('familySheet', 'familyHandle');
     initSwipeDelete();
     initPullToRefresh();
 
     if (localStorage.getItem('piggy_last_seen_version') !== CHANGELOG[0].version) document.getElementById('changelogDot').classList.remove('hidden');
 
     fetchRates(false);
-    // рендер данных запускается в sb.auth.onAuthStateChange после входа
 
     try {
       const iconHref = document.querySelector('link[rel="apple-touch-icon"]').getAttribute('href');
-      const manifest = { name: 'Умная Копилка и Трекер Расходов', short_name: 'Копилка', start_url: '.', display: 'standalone', background_color: '#000000', theme_color: '#000000', icons: [{ src: iconHref, sizes: '512x512', type: 'image/png' }] };
+      const manifest = { name: 'Умная Копилка и Трекер Расходов', short_name: 'Копилка', start_url: '.', display: 'standalone', background_color: '#07070b', theme_color: '#07070b', icons: [{ src: iconHref, sizes: '512x512', type: 'image/png' }] };
       const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
       document.getElementById('manifestLink').setAttribute('href', URL.createObjectURL(blob));
     } catch (e) {}
