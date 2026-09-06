@@ -1,0 +1,50 @@
+// /api/household-members.js
+// Требует SUPABASE_SERVICE_ROLE_KEY в Vercel (тот же, что для обучения ИИ).
+
+const SUPABASE_URL = 'https://xscuojyubgnilmufesvx.supabase.co';
+
+export default async function handler(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceKey) return res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY не настроен на сервере' });
+
+  const { accessToken, householdId } = req.body || {};
+  if (!accessToken || !householdId) return res.status(400).json({ error: 'Не хватает данных' });
+
+  try {
+    // 1. Проверяем, кто спрашивает
+    const meRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: { apikey: serviceKey, Authorization: `Bearer ${accessToken}` },
+    });
+    const me = await meRes.json();
+    if (!meRes.ok || !me.id) return res.status(401).json({ error: 'Не авторизован' });
+
+    // 2. Проверяем, что запрашивающий реально состоит в этой семье
+    const myProfileRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${me.id}&select=household_id`, {
+      headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
+    });
+    const myProfile = await myProfileRes.json();
+    if (!myProfile[0] || myProfile[0].household_id !== householdId) return res.status(403).json({ error: 'Нет доступа к этой семье' });
+
+    // 3. Список профилей этой семьи
+    const membersRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?household_id=eq.${householdId}&select=id,salary`, {
+      headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
+    });
+    const members = await membersRes.json();
+
+    // 4. Email каждого — через Admin API
+    const withEmails = await Promise.all(members.map(async (m) => {
+      try {
+        const r = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${m.id}`, {
+          headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
+        });
+        const u = await r.json();
+        return { id: m.id, email: u.email || '—', isMe: m.id === me.id };
+      } catch (e) { return { id: m.id, email: '—', isMe: m.id === me.id }; }
+    }));
+
+    return res.status(200).json({ members: withEmails });
+  } catch (err) {
+    return res.status(500).json({ error: err.message || 'Внутренняя ошибка' });
+  }
+}
