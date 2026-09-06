@@ -221,7 +221,7 @@
 
         <div id="budgetWidget" class="hidden glass rounded-2xl p-4 mb-4 fade-slide-up">
           <div class="flex justify-between items-center mb-2">
-            <p class="text-sm font-medium text-[#9a9aa5]">Бюджет на month</p>
+            <p class="text-sm font-medium text-[#9a9aa5]">Бюджет на месяц</p>
             <p id="budgetText" class="text-sm font-semibold"></p>
           </div>
           <div class="h-2.5 bg-white/10 rounded-full overflow-hidden">
@@ -355,7 +355,7 @@
           <button onclick="closeSheet('addSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#9a9aa5] spring-tap">✕</button>
         </div>
 
-        <button type="button" onclick="openCameraSheet()" class="w-full flex items-center justify-center gap-2 bg-white/5 active:bg-white/10 spring-tap rounded-2xl py-3.5 font-medium text-sm text-[var(--accent-2)] mb-1.5">
+        <button type="button" onclick="openCameraSheet()" class="w-full flex items-center justify-center gap-2 bg-white/5 active:bg-white/10 spring-tap rounded-2xl py-3.5 font-semibold text-[15px] mb-1.5 text-[var(--accent-2)]">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1-2h7l1 2h2A1.5 1.5 0 0 1 20 8.5v10A1.5 1.5 0 0 1 18.5 20h-13A1.5 1.5 0 0 1 4 18.5v-10Z"/><circle cx="12" cy="13" r="3.4"/></svg>
           Сканировать чек
         </button>
@@ -511,14 +511,14 @@
           <h2 class="t-title3">Настройки</h2>
           <button onclick="closeSheet('settingsSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#9a9aa5] spring-tap">✕</button>
         </div>
-        <p class="text-xs font-semibold text-[#9a9aa5] uppercase tracking-wide mb-2">Зарплата в month</p>
+        <p class="text-xs font-semibold text-[#9a9aa5] uppercase tracking-wide mb-2">Зарплата в месяц</p>
         <div class="flex items-center gap-2 bg-white/5 rounded-xl px-4 py-3.5 mb-2 focus-within:ring-2 focus-within:ring-[var(--accent)]/40">
           <input id="salaryInput" type="text" inputmode="decimal" placeholder="0" class="flex-1 bg-transparent text-[15px] outline-none">
           <span id="salaryCurrencySymbol" class="text-[#9a9aa5] text-sm">₽</span>
         </div>
         <p class="text-[11px] text-[#9a9aa5] mb-5">Используется для будущей аналитики бюджета</p>
 
-        <p class="text-xs font-semibold text-[#9a9aa5] uppercase tracking-wide mb-2">Бюджет на month (расходы)</p>
+        <p class="text-xs font-semibold text-[#9a9aa5] uppercase tracking-wide mb-2">Бюджет на месяц (расходы)</p>
         <div class="flex items-center gap-2 bg-white/5 rounded-xl px-4 py-3.5 mb-2 focus-within:ring-2 focus-within:ring-[var(--accent)]/40">
           <input id="budgetInput" type="text" inputmode="decimal" placeholder="0 — без лимита" class="flex-1 bg-transparent text-[15px] outline-none">
           <span id="budgetCurrencySymbol" class="text-[#9a9aa5] text-sm">₽</span>
@@ -805,7 +805,7 @@
         transactions = []; goals = []; recurringPayments = []; currentHousehold = null; householdMembers = [];
         return;
       }
-    } else if (!hhRow.invite_code) {
+    } else if (!hhRow.invite_code && hhRow.owner_id === userId) {
       const code = generateInviteCode();
       const { data: updatedHh } = await sb.from('households').update({ invite_code: code }).eq('id', hhRow.id).select().single();
       if (updatedHh) hhRow = updatedHh;
@@ -1127,7 +1127,6 @@
   function escapeHtml(str) { const d = document.createElement('div'); d.textContent = str ?? ''; return d.innerHTML; }
   function prefersReducedMotion() { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
 
-  // Safe wrapper for conversion
   function convert(amount, from, to) {
     if (from === to) return amount;
     const r = rates || FALLBACK_RATES;
