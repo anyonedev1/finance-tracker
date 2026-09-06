@@ -62,6 +62,7 @@
 
   @keyframes ringPop { 0%{transform:scale(1);} 40%{transform:scale(1.08);} 100%{transform:scale(1);} }
   .ring-pop { animation: ringPop .5s ease; }
+  .sheet-spring { transition-timing-function: cubic-bezier(.34,1.56,.64,1); }
 
   @keyframes shimmer { 0%{background-position:-200% 0;} 100%{background-position:200% 0;} }
   .shimmer-text { background:linear-gradient(90deg,#fff 25%,#FFD60A 50%,#fff 75%); background-size:200% auto; -webkit-background-clip:text; background-clip:text; color:transparent; animation: shimmer 2.4s linear infinite; }
@@ -269,7 +270,7 @@
     <!-- BOTTOM NAV -->
     <nav class="fixed bottom-0 inset-x-0 z-20">
       <div class="max-w-md mx-auto bg-[#1c1c1e]/85 backdrop-blur-xl border-t border-white/10 flex relative safe-bottom">
-        <div id="navIndicator" class="absolute top-1.5 left-0 h-[3px] w-1/3 rounded-full bg-[#0A84FF] transition-transform duration-300 ease-out" style="transform:translateX(0%)"></div>
+        <div id="navIndicator" class="absolute top-1.5 left-0 h-[3px] w-1/3 rounded-full bg-[#0A84FF] transition-transform duration-300 sheet-spring" style="transform:translateX(0%)"></div>
         <button class="nav-btn flex-1 flex flex-col items-center py-2.5 gap-1 text-[#0A84FF] active:opacity-60 transition-opacity" data-tab="home" onclick="switchTab('home')">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1H9a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1h2.5a1 1 0 0 0 1-1v-9"/></svg>
           <span class="text-[10px] font-medium">Главная</span>
@@ -290,7 +291,7 @@
   <div id="backdrop" class="fixed inset-0 bg-black/60 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300 z-40"></div>
 
   <!-- ADD TRANSACTION SHEET -->
-  <div id="addSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 ease-out">
+  <div id="addSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 sheet-spring">
     <div class="max-w-md mx-auto bg-[#1c1c1e] rounded-t-3xl safe-bottom max-h-[88vh] overflow-y-auto">
       <div id="addHandle" class="pt-3 pb-1 flex justify-center touch-none"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
       <div class="px-5 pb-6 pt-2">
@@ -322,7 +323,7 @@
         </div>
 
         <div class="relative flex bg-white/5 rounded-full p-1 mt-4 mb-6">
-          <div id="segSlider" class="absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full transition-transform duration-300 ease-out" style="background:#FF453A"></div>
+          <div id="segSlider" class="absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full transition-transform duration-300 sheet-spring" style="background:#FF453A"></div>
           <button type="button" id="segExpenseBtn" onclick="setType('expense')" class="relative z-10 flex-1 py-2.5 rounded-full font-semibold text-sm transition-colors text-white">Расход</button>
           <button type="button" id="segIncomeBtn" onclick="setType('income')" class="relative z-10 flex-1 py-2.5 rounded-full font-semibold text-sm transition-colors text-[#8E8E93]">Доход</button>
         </div>
@@ -344,7 +345,7 @@
   </div>
 
   <!-- ADD GOAL SHEET -->
-  <div id="goalSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 ease-out">
+  <div id="goalSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 sheet-spring">
     <div class="max-w-md mx-auto bg-[#1c1c1e] rounded-t-3xl safe-bottom">
       <div id="goalHandle" class="pt-3 pb-1 flex justify-center touch-none"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
       <div class="px-5 pb-6 pt-2">
@@ -365,7 +366,7 @@
   </div>
 
   <!-- TOP UP SHEET -->
-  <div id="topUpSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 ease-out">
+  <div id="topUpSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 sheet-spring">
     <div class="max-w-md mx-auto bg-[#1c1c1e] rounded-t-3xl safe-bottom">
       <div id="topUpHandle" class="pt-3 pb-1 flex justify-center touch-none"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
       <div class="px-5 pb-6 pt-2">
@@ -385,7 +386,7 @@
   </div>
 
   <!-- CHANGELOG SHEET -->
-  <div id="changelogSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 ease-out">
+  <div id="changelogSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 sheet-spring">
     <div class="max-w-md mx-auto bg-[#1c1c1e] rounded-t-3xl safe-bottom max-h-[80vh] overflow-y-auto">
       <div id="changelogHandle" class="pt-3 pb-1 flex justify-center touch-none"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
       <div class="px-5 pb-6 pt-2">
@@ -420,7 +421,7 @@
   </div>
 
   <!-- SETTINGS SHEET -->
-  <div id="settingsSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 ease-out">
+  <div id="settingsSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 sheet-spring">
     <div class="max-w-md mx-auto bg-[#1c1c1e] rounded-t-3xl safe-bottom">
       <div id="settingsHandle" class="pt-3 pb-1 flex justify-center touch-none"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
       <div class="px-5 pb-6 pt-2">
@@ -473,7 +474,7 @@
   </div>
 
   <!-- PREMIUM SHEET -->
-  <div id="premiumSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 ease-out">
+  <div id="premiumSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 sheet-spring">
     <div class="max-w-md mx-auto bg-gradient-to-b from-[#2a2410] to-[#1c1c1e] rounded-t-3xl safe-bottom">
       <div id="premiumHandle" class="pt-3 pb-1 flex justify-center touch-none"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
       <div class="px-5 pb-6 pt-2 text-center">
@@ -511,7 +512,7 @@
   </div>
 
   <!-- CLARIFY SHEET (уточняющий вопрос от ИИ) -->
-  <div id="clarifySheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 ease-out">
+  <div id="clarifySheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 sheet-spring">
     <div class="max-w-md mx-auto bg-[#1c1c1e] rounded-t-3xl safe-bottom">
       <div id="clarifyHandle" class="pt-3 pb-1 flex justify-center touch-none"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
       <div class="px-5 pb-6 pt-3 text-center">
@@ -526,7 +527,7 @@
   </div>
 
   <!-- RECURRING SHEET -->
-  <div id="recurringSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 ease-out">
+  <div id="recurringSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 sheet-spring">
     <div class="max-w-md mx-auto bg-[#1c1c1e] rounded-t-3xl safe-bottom max-h-[85vh] flex flex-col">
       <div id="recurringHandle" class="pt-3 pb-1 flex justify-center touch-none shrink-0"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
       <div class="px-5 pb-6 pt-2 overflow-y-auto">
@@ -557,7 +558,7 @@
   </div>
 
   <!-- ADVICE SHEET -->
-  <div id="adviceSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 ease-out">
+  <div id="adviceSheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 sheet-spring">
     <div class="max-w-md mx-auto bg-[#1c1c1e] rounded-t-3xl safe-bottom max-h-[80vh] flex flex-col">
       <div id="adviceHandle" class="pt-3 pb-1 flex justify-center touch-none shrink-0"><div class="w-9 h-1.5 rounded-full bg-white/20"></div></div>
       <div class="px-5 pb-6 pt-2 overflow-y-auto">
@@ -1146,9 +1147,18 @@
       const celebrate = g.id === justCompletedGoalId;
       return `<div id="goal-${g.id}" class="bg-[#1c1c1e] rounded-2xl p-4 card-enter ${celebrate ? 'goal-celebrate' : ''}" style="animation-delay:${i*40}ms">
         <div class="flex justify-between items-start mb-2 gap-2">
-          <div class="min-w-0">
-            <p class="font-semibold text-[17px] truncate">${escapeHtml(g.name)}</p>
-            <p class="text-xs text-[#8E8E93] mt-0.5">${fmDisplay(g.collected)} из ${fmDisplay(g.target)}</p>
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="relative w-11 h-11 shrink-0">
+              <svg width="44" height="44" viewBox="0 0 44 44" class="-rotate-90">
+                <circle cx="22" cy="22" r="18" fill="none" stroke="#2c2c2e" stroke-width="4"/>
+                <circle cx="22" cy="22" r="18" fill="none" stroke="${done ? '#30D158' : '#FFD60A'}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${2*Math.PI*18}" stroke-dashoffset="${2*Math.PI*18*(1-pct/100)}" style="transition:stroke-dashoffset .6s ease"/>
+              </svg>
+              <span class="absolute inset-0 flex items-center justify-center text-sm">${done ? '🎉' : '🎯'}</span>
+            </div>
+            <div class="min-w-0">
+              <p class="font-semibold text-[17px] truncate">${escapeHtml(g.name)}</p>
+              <p class="text-xs text-[#8E8E93] mt-0.5">${fmDisplay(g.collected)} из ${fmDisplay(g.target)}</p>
+            </div>
           </div>
           <span class="text-xs font-semibold px-2 py-1 rounded-full shrink-0 ${done ? 'bg-[#30D158]/15 text-[#30D158]' : 'bg-[#FFD60A]/15 text-[#FFD60A]'}">${done ? 'Готово 🎉' : pct + '%'}</span>
         </div>
@@ -1460,9 +1470,9 @@
   }
   function renderCategoryGrid() {
     const cats = selectedType === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
-    document.getElementById('categoryGrid').innerHTML = cats.map(c =>
-      `<button type="button" data-cat="${c.name}" onclick="selectCategory('${c.name}')" class="cat-chip flex flex-col items-center gap-1 py-3 rounded-2xl bg-white/5 active:scale-95 transition-all border-2 border-transparent">
-        <span class="text-2xl">${c.icon}</span>
+    document.getElementById('categoryGrid').innerHTML = cats.map((c, i) =>
+      `<button type="button" data-cat="${c.name}" onclick="selectCategory('${c.name}')" class="cat-chip fade-slide-up flex flex-col items-center gap-1.5 py-3 rounded-2xl bg-white/5 active:scale-90 transition-all duration-150 border-2 border-transparent" style="animation-delay:${i*35}ms">
+        <span class="cat-chip-icon w-9 h-9 rounded-full flex items-center justify-center text-lg transition-transform duration-200" style="background:${c.color}22">${c.icon}</span>
         <span class="text-[10.5px] font-medium text-[#8E8E93] leading-tight text-center">${c.name}</span>
       </button>`).join('');
     selectedCategory = null;
@@ -1470,10 +1480,22 @@
   }
   function selectCategory(name) {
     selectedCategory = name;
+    const cats = selectedType === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
     const accent = selectedType === 'expense' ? '#FF453A' : '#30D158';
     document.querySelectorAll('.cat-chip').forEach(el => {
-      if (el.dataset.cat === name) { el.style.borderColor = accent; el.classList.add('bg-white/10'); }
-      else { el.style.borderColor = 'transparent'; el.classList.remove('bg-white/10'); }
+      const icon = el.querySelector('.cat-chip-icon');
+      const cat = cats.find(c => c.name === el.dataset.cat);
+      if (el.dataset.cat === name) {
+        el.style.borderColor = accent; el.classList.add('bg-white/10');
+        icon.style.background = accent + '33';
+        icon.style.transform = 'scale(1.12)';
+        icon.classList.add('ring-pop');
+        setTimeout(() => icon.classList.remove('ring-pop'), 500);
+      } else {
+        el.style.borderColor = 'transparent'; el.classList.remove('bg-white/10');
+        icon.style.background = (cat?.color || '#8E8E93') + '22';
+        icon.style.transform = 'scale(1)';
+      }
     });
     updateSaveButtonState();
   }
