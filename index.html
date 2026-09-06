@@ -698,6 +698,8 @@
         realHhId = newHh.id;
         hhRow = newHh;
       } else {
+        console.error('household create failed:', hhErr);
+        showToast('Ошибка семьи: ' + (hhErr?.message || 'неизвестно'), { error: true });
         transactions = []; goals = []; recurringPayments = []; currentHousehold = null; return;
       }
     }
