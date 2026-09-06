@@ -683,13 +683,22 @@
     if (profileRes.data && profileRes.data.display_currency) { displayCurrency = profileRes.data.display_currency; }
     updatePremiumBadge();
 
-    if (!hhId) { transactions = []; goals = []; recurringPayments = []; return; }
+    let realHhId = hhId;
+    if (!realHhId) {
+      const { data: newHh, error: hhErr } = await sb.from('households').insert({ owner_id: userId }).select().single();
+      if (!hhErr && newHh) {
+        await sb.from('profiles').update({ household_id: newHh.id }).eq('id', userId);
+        realHhId = newHh.id;
+      } else {
+        transactions = []; goals = []; recurringPayments = []; return;
+      }
+    }
 
     const [txRes, goalsRes, hhRes, recRes] = await Promise.all([
-      sb.from('transactions').select('*').eq('household_id', hhId).order('created_at', { ascending: false }),
-      sb.from('goals').select('*').eq('household_id', hhId).order('created_at', { ascending: true }),
-      sb.from('households').select('*').eq('id', hhId).single(),
-      sb.from('recurring_payments').select('*').eq('household_id', hhId).order('day_of_month', { ascending: true }),
+      sb.from('transactions').select('*').eq('household_id', realHhId).order('created_at', { ascending: false }),
+      sb.from('goals').select('*').eq('household_id', realHhId).order('created_at', { ascending: true }),
+      sb.from('households').select('*').eq('id', realHhId).single(),
+      sb.from('recurring_payments').select('*').eq('household_id', realHhId).order('day_of_month', { ascending: true }),
     ]);
     transactions = (txRes.data || []).map(t => ({ id: t.id, type: t.type, category: t.category, amount: Number(t.amount), entryAmount: Number(t.entry_amount), entryCurrency: t.entry_currency, comment: t.comment, isSaving: t.is_saving, date: new Date(t.created_at).getTime() }));
     goals = (goalsRes.data || []).map(g => ({ id: g.id, name: g.name, target: Number(g.target), collected: Number(g.collected), date: new Date(g.created_at).getTime() }));
