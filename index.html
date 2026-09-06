@@ -221,7 +221,7 @@
 
         <div id="budgetWidget" class="hidden glass rounded-2xl p-4 mb-4 fade-slide-up">
           <div class="flex justify-between items-center mb-2">
-            <p class="text-sm font-medium text-[#9a9aa5]">Бюджет на месяц</p>
+            <p class="text-sm font-medium text-[#9a9aa5]">Бюджет на month</p>
             <p id="budgetText" class="text-sm font-semibold"></p>
           </div>
           <div class="h-2.5 bg-white/10 rounded-full overflow-hidden">
@@ -474,7 +474,7 @@
           <button onclick="copyInviteCode()" class="text-[var(--accent-2)] text-sm font-semibold shrink-0">Копировать</button>
         </div>
         <div class="flex gap-2 mb-2">
-          <input id="joinCodeInputFull" type="text" placeholder="Ввести код и присоединиться" class="flex-1 bg-white/5 rounded-xl px-4 py-3 outline-none text-sm uppercase">
+          <input id="joinCodeInputFull" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Ввести код и присоединиться" class="flex-1 bg-white/5 rounded-xl px-4 py-3 outline-none text-sm uppercase">
           <button onclick="joinHousehold('joinCodeInputFull')" class="bg-white/10 rounded-xl px-4 text-sm font-semibold spring-tap">Войти</button>
         </div>
         <p class="text-[11px] text-[#9a9aa5]">После входа по коду приложение перезагрузится, чтобы всё точно синхронизировалось.</p>
@@ -511,14 +511,14 @@
           <h2 class="t-title3">Настройки</h2>
           <button onclick="closeSheet('settingsSheet')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#9a9aa5] spring-tap">✕</button>
         </div>
-        <p class="text-xs font-semibold text-[#9a9aa5] uppercase tracking-wide mb-2">Зарплата в месяц</p>
+        <p class="text-xs font-semibold text-[#9a9aa5] uppercase tracking-wide mb-2">Зарплата в month</p>
         <div class="flex items-center gap-2 bg-white/5 rounded-xl px-4 py-3.5 mb-2 focus-within:ring-2 focus-within:ring-[var(--accent)]/40">
           <input id="salaryInput" type="text" inputmode="decimal" placeholder="0" class="flex-1 bg-transparent text-[15px] outline-none">
           <span id="salaryCurrencySymbol" class="text-[#9a9aa5] text-sm">₽</span>
         </div>
         <p class="text-[11px] text-[#9a9aa5] mb-5">Используется для будущей аналитики бюджета</p>
 
-        <p class="text-xs font-semibold text-[#9a9aa5] uppercase tracking-wide mb-2">Бюджет на месяц (расходы)</p>
+        <p class="text-xs font-semibold text-[#9a9aa5] uppercase tracking-wide mb-2">Бюджет на month (расходы)</p>
         <div class="flex items-center gap-2 bg-white/5 rounded-xl px-4 py-3.5 mb-2 focus-within:ring-2 focus-within:ring-[var(--accent)]/40">
           <input id="budgetInput" type="text" inputmode="decimal" placeholder="0 — без лимита" class="flex-1 bg-transparent text-[15px] outline-none">
           <span id="budgetCurrencySymbol" class="text-[#9a9aa5] text-sm">₽</span>
@@ -766,7 +766,7 @@
   let realtimeChannel = null;
 
   function generateInviteCode() {
-    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    const chars = '0123456789';
     let out = '';
     for (let i = 0; i < 6; i++) out += chars[Math.floor(Math.random() * chars.length)];
     return out;
@@ -805,6 +805,10 @@
         transactions = []; goals = []; recurringPayments = []; currentHousehold = null; householdMembers = [];
         return;
       }
+    } else if (!hhRow.invite_code) {
+      const code = generateInviteCode();
+      const { data: updatedHh } = await sb.from('households').update({ invite_code: code }).eq('id', hhRow.id).select().single();
+      if (updatedHh) hhRow = updatedHh;
     }
 
     const [txRes, goalsRes, recRes, membersRes] = await Promise.all([
@@ -843,7 +847,6 @@
     flashSync._t = setTimeout(() => { el.classList.add('hidden'); el.classList.remove('flex'); }, 1800);
   }
   function handleRealtimeTx(payload) {
-    // игнорируем собственные оптимистичные вставки — они уже в списке к моменту прихода события
     if (payload.eventType === 'INSERT') {
       const t = payload.new;
       if (transactions.some(x => x.id === t.id)) { flashSync(); return; }
@@ -1045,16 +1048,13 @@
     navigator.clipboard?.writeText(currentHousehold.invite_code);
     showToast('Код скопирован — отправьте его члену семьи');
   }
-  // ВАЖНО: после присоединения к семье делаем полную перезагрузку страницы,
-  // а не просто перерисовку — иначе household_id в памяти браузера может
-  // разойтись с тем, что реально в базе, и следующая операция будет отклонена
-  // RLS-политикой ("new row violates row-level security policy").
   async function joinHousehold(inputId) {
     const input = document.getElementById(inputId || 'joinCodeInputFull');
-    const code = input.value.trim().toLowerCase();
-    if (!code) return;
-    const { data: hh, error } = await sb.from('households').select('*').eq('invite_code', code).single();
-    if (error || !hh) { showToast('Код не найден', { error: true }); return; }
+    const code = input.value.trim();
+    if (!code) { showToast('Введите код', { error: true }); return; }
+    const { data: hh, error } = await sb.from('households').select('*').eq('invite_code', code).maybeSingle();
+    if (error) { showToast('Ошибка поиска: ' + friendlyDbError(error), { error: true }); return; }
+    if (!hh) { showToast('Код не найден', { error: true }); return; }
     const { error: updErr } = await sb.from('profiles').update({ household_id: hh.id }).eq('id', currentUser.id);
     if (updErr) { showToast(friendlyDbError(updErr), { error: true }); return; }
     showToast('Вы присоединились к семье! Перезагружаю…');
@@ -1127,6 +1127,7 @@
   function escapeHtml(str) { const d = document.createElement('div'); d.textContent = str ?? ''; return d.innerHTML; }
   function prefersReducedMotion() { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
 
+  // Safe wrapper for conversion
   function convert(amount, from, to) {
     if (from === to) return amount;
     const r = rates || FALLBACK_RATES;
@@ -1231,7 +1232,7 @@
   }
   function updateRatesUI() {
     const ticker = document.getElementById('ratesTicker');
-    const label = document.getElementById('ratesUpdatedLabel');
+    const label = document.getElementById('ratesUpdatedAtLabel');
     if (ticker) {
       ticker.innerHTML = ['USD', 'EUR', 'BYN'].map(cur => {
         const v = convert(1, cur, 'RUB');
