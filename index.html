@@ -685,25 +685,31 @@
     updatePremiumBadge();
 
     let realHhId = hhId;
-    if (!realHhId) {
+    let hhRow = null;
+    if (realHhId) {
+      const { data } = await sb.from('households').select('*').eq('id', realHhId).maybeSingle();
+      hhRow = data || null;
+    }
+    if (!hhRow) {
+      // household_id пуст ИЛИ указывает на несуществующую запись — чиним
       const { data: newHh, error: hhErr } = await sb.from('households').insert({ owner_id: userId }).select().single();
       if (!hhErr && newHh) {
         await sb.from('profiles').update({ household_id: newHh.id }).eq('id', userId);
         realHhId = newHh.id;
+        hhRow = newHh;
       } else {
-        transactions = []; goals = []; recurringPayments = []; return;
+        transactions = []; goals = []; recurringPayments = []; currentHousehold = null; return;
       }
     }
 
-    const [txRes, goalsRes, hhRes, recRes] = await Promise.all([
+    const [txRes, goalsRes, recRes] = await Promise.all([
       sb.from('transactions').select('*').eq('household_id', realHhId).order('created_at', { ascending: false }),
       sb.from('goals').select('*').eq('household_id', realHhId).order('created_at', { ascending: true }),
-      sb.from('households').select('*').eq('id', realHhId).single(),
       sb.from('recurring_payments').select('*').eq('household_id', realHhId).order('day_of_month', { ascending: true }),
     ]);
     transactions = (txRes.data || []).map(t => ({ id: t.id, type: t.type, category: t.category, amount: Number(t.amount), entryAmount: Number(t.entry_amount), entryCurrency: t.entry_currency, comment: t.comment, isSaving: t.is_saving, date: new Date(t.created_at).getTime() }));
     goals = (goalsRes.data || []).map(g => ({ id: g.id, name: g.name, target: Number(g.target), collected: Number(g.collected), date: new Date(g.created_at).getTime() }));
-    currentHousehold = hhRes.data || null;
+    currentHousehold = hhRow;
     recurringPayments = recRes.data || [];
     await applyDueRecurringPayments();
   }
